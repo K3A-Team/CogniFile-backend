@@ -1,0 +1,7 @@
+__pycache__
+server-env
+/.env
+/env
+/backend/.env
+firebase.json
+TEMP_FILES
