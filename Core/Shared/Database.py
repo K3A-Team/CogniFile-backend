@@ -68,3 +68,25 @@ class Database:
     @staticmethod
     async def editFolder(folderID, folderDict):
         return await Database.edit("folders", folderID, folderDict)
+    
+    @staticmethod
+    async def deleteFolder(folderID):
+        return await Database.delete("folders", folderID)
+    
+    @staticmethod
+    async def createFile(file):
+        fileDict = file.to_dict()
+        await Database.store("files", file.id, fileDict)
+        return fileDict
+    
+    @staticmethod
+    async def getFile(fileID):
+        return await Database.read("files", fileID)
+    
+    @staticmethod
+    async def editFile(fileID, fileDict):
+        return await Database.edit("files", fileID, fileDict)
+    
+    @staticmethod
+    async def deleteFile(fileID):
+        return await Database.delete("files", fileID)

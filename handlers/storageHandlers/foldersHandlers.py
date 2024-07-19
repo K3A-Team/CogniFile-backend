@@ -34,7 +34,7 @@ async def createFolderHandler(userID:str, folderName: str , parentFolderID: str 
     writeId = []
     if parentFolderID is not None:
         parentFolder = await Database.getFolder(parentFolderID)
-        if ((userID != parentFolder["ownerId"]) and (userID not in parentFolder["readId"]) and (userID not in parentFolder["writeId"])):
+        if ((userID != parentFolder["ownerId"]) and (userID not in parentFolder["writeId"])):
             raise Exception("You are not allowed to create a folder in this directory")
         else:
             readId = parentFolder["readId"]

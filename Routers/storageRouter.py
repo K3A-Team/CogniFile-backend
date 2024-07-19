@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import os
 from handlers.storageHandlers.foldersHandlers import storeInStorageHandler 
 from Routers.foldersRouter import foldersRouter
+from Routers.filesRouter import filesRouter
 
 
 load_dotenv()
@@ -22,6 +23,7 @@ load_dotenv()
 storageRouter = APIRouter()
 # Nest foldersRouter and filesRouter inside storageRouter
 storageRouter.include_router(foldersRouter, tags=["folders"], prefix="/folders")
+storageRouter.include_router(filesRouter, tags=["files"], prefix="/folders")
 
 @storageRouter.post("/", status_code=status.HTTP_201_CREATED)
 async def storeInStorage(
