@@ -27,7 +27,6 @@ def statusProtected(token: str = Depends(oauth2_scheme)):
         id: str = payload.get("id")
         if id == None:
             raise credentials_exception
-
         # Else , continue. (Don't raise any exception)
         return id
     except HTTPException as e:

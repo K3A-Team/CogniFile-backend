@@ -11,22 +11,18 @@ from fastapi import File
 import uuid
 from dotenv import load_dotenv
 import os
-from handlers.storageHandlers import storeInStorageHandler 
 
 
 load_dotenv()
 
 
+async def storeInStorageHandler(userID:str, file: UploadFile = File(...)):
 
-storageRouter = APIRouter()
+        time = int(datetime.now().timestamp())
+        fileID = str(time) + file.filename
+        file.filename = fileID
+        f = file.file
+        url = Storage.store(f, fileID)
+        
+        return url
 
-
-@storageRouter.post("/", status_code=status.HTTP_201_CREATED)
-async def storeInStorage(
-        file: UploadFile = File(...),
-        userID: str = Depends(statusProtected)):
-    try:
-        url = await storeInStorageHandler(userID, file)
-        return {"success": True, "url": url}
-    except Exception as e:
-        return {"success": False, "message": str(e)}
