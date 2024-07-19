@@ -15,6 +15,7 @@ import uuid
 from Models.Entities.User import User
 from handlers.authHandlers import registerUserHandler , loginUserHandler
 
+
 authRouter = APIRouter()
 
 
@@ -28,17 +29,22 @@ async def register_user(request: RegisterRequest):
     try:
         data = request.dict()
 
-        user = User(
+        
+
+     
+
+        userDict = await registerUserHandler(            
             data["firstName"], 
             data["lastName"],
             data["email"],
             data["password"]
         )
 
-        userDict = await registerUserHandler(user)
+
 
 
         jwtToken = userDict["token"]
+        del userDict["token"]
 
         response = JSONResponse(
             content={"success": True, "user": userDict, "token": jwtToken},
@@ -59,6 +65,7 @@ async def login_user(request: LoginRequest):
 
         user  = await loginUserHandler(data["email"], data["password"])
         jwtToken = user["token"]
+        del user["token"]
 
         response = JSONResponse(
             content={"success": True, "user": user, "token": jwtToken},

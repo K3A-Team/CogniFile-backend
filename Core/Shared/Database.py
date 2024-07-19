@@ -18,13 +18,13 @@ db = firestore.client()
 
 class Database:
     @staticmethod
-    def store(collection , document , dict):
+    async def store(collection , document , dict):
         doc_ref = db.collection(collection).document(document)
         return doc_ref.set(dict)
 
 
     @staticmethod
-    def read(collection , document):
+    async def read(collection , document):
         doc_ref = db.collection(collection).document(document)
         if doc_ref.get().exists:
             return doc_ref.get().to_dict()
@@ -33,24 +33,38 @@ class Database:
  
 
     @staticmethod
-    def edit(collection , document,querydict):
+    async def edit(collection , document,querydict):
         doc_ref = db.collection(collection).document(document)
         return  doc_ref.update(querydict)
 
 
     @staticmethod
-    def delete(collection , document):
+    async def delete(collection , document):
         event_ref = db.collection(collection).document(document)
         return event_ref.delete()
     
     @staticmethod
-    def exists(collection,document):
+    async def exists(collection,document):
         doc_ref = db.collection(collection).document(document)
         return doc_ref.get().exists
 
     @staticmethod
-    def userByEmail(email):
+    async def userByEmail(email):
         result = db.collection("users").where("email", "==", email.lower()).get()
         if len(result) == 0:
             return None
         return result[0].to_dict()
+    
+    @staticmethod
+    async def createFolder(folder):
+        folderDict = folder.to_dict()
+        await Database.store("folders", folder.id, folderDict)
+        return folderDict
+    
+    @staticmethod
+    async def getFolder(folderID):
+        return await Database.read("folders", folderID)
+    
+    @staticmethod
+    async def editFolder(folderID, folderDict):
+        return await Database.edit("folders", folderID, folderDict)

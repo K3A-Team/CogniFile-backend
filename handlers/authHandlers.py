@@ -13,21 +13,38 @@ from dotenv import load_dotenv
 from Core.Shared.Security import *
 import uuid
 from Models.Entities.User import User
+from handlers.storageHandlers.foldersHandlers import createFolderHandler
 
-async def registerUserHandler(user : User):
+async def registerUserHandler(firstname : str, lastname : str, email : str, password : str):
 
-    user.email = user.email.lower()
-    user.password = hashPassword(user.password)
+
+    email = email.lower()
 
     result = db.collection("users").where(
-        "email", "==", user.email).get()
+        "email", "==", email).get()
 
     if len(result) > 0:
         raise Exception("User already exists")
+    
+    userId = str(uuid.uuid4())
+
+    rootFolder = await createFolderHandler(userID=userId, folderName="/")
+
+    rootFolderId = rootFolder["id"]
+    
+    user = User(
+        id=userId,
+        firstName=firstname, 
+        lastName=lastname, 
+        email=email, 
+        password=hashPassword(password),
+        rootFolderId=rootFolderId
+        )
 
     userDict = user.to_dict()
 
-    Database.store("users", user.id, userDict)
+    await Database.store("users", user.id, userDict)
+    
 
     del userDict["password"]
 
@@ -41,8 +58,10 @@ async def registerUserHandler(user : User):
 
 async def loginUserHandler(email,password):
 
+    email = email.lower()
+
     result = db.collection("users").where(
-        "email", "==", email.lower()).get()
+        "email", "==", email).get()
 
     if len(result) == 0:
         raise Exception("Email does not exist")

@@ -11,7 +11,8 @@ from fastapi import File
 import uuid
 from dotenv import load_dotenv
 import os
-from handlers.storageHandlers import storeInStorageHandler 
+from handlers.storageHandlers.foldersHandlers import storeInStorageHandler 
+from Routers.foldersRouter import foldersRouter
 
 
 load_dotenv()
@@ -19,7 +20,8 @@ load_dotenv()
 
 
 storageRouter = APIRouter()
-
+# Nest foldersRouter and filesRouter inside storageRouter
+storageRouter.include_router(foldersRouter, tags=["folders"], prefix="/folders")
 
 @storageRouter.post("/", status_code=status.HTTP_201_CREATED)
 async def storeInStorage(
@@ -30,3 +32,4 @@ async def storeInStorage(
         return {"success": True, "url": url}
     except Exception as e:
         return {"success": False, "message": str(e)}
+

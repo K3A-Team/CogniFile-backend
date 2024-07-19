@@ -14,7 +14,7 @@ import uuid
 import mimetypes
 
 async def getProfileHandler(userID: str):
-    user = Database.read("users", userID)
+    user = await Database.read("users", userID)
     if user is None:
         return badRequestError("User not found")
     del user["password"]
@@ -33,5 +33,5 @@ async def editProfileHandler(data : dict,userID: str):
     
     if len(user) == 0:
         return badRequestError("No data to update")
-    Database.edit("users", userID, user)
+    await Database.edit("users", userID, user)
     return user
