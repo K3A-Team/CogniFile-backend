@@ -1,6 +1,6 @@
 # Intelligent File Management System Backend
 
-This repository contains the backend implementation for an advanced file management system developed during a hackathon. Our solution aims to address common file management challenges and introduce intelligent features for enhanced user experience.
+This repository contains the backend implementation for an advanced file management system developed during the A2SV Hackathon. Our solution aims to address common file management challenges and introduce intelligent features for enhanced user experience.
 
 ## 🚀 Key Features
 
@@ -33,9 +33,14 @@ This repository contains the backend implementation for an advanced file managem
 
 ## 🛠️ Technologies Used
 
-FastAPI , Firestore , Firebase storage , Elastic Search , LLAMA-2
+- FastAPI: For building the API.
+- Firestore: As the database solution.
+- Firebase Storage: For file storage.
+- Elastic Search: For advanced search capabilities.
+- LLAMA-2: For natural language processing.
 
 ## 📞 Contact
+For any inquiries or support, please contact:
 
-Ls_yekene@esi.dz 
-+213559047526
+Email: Ls_yekene@esi.dz
+Phone: +213559047526

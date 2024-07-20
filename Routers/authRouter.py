@@ -19,30 +19,19 @@ from handlers.authHandlers import registerUserHandler , loginUserHandler
 authRouter = APIRouter()
 
 
-@authRouter.get("/")
-def welcome():
-    return "Router working"
-
-
 @authRouter.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(request: RegisterRequest):
+    """
+    Registers a new user and returns a JSON response with user details and a JWT token.
+    """
     try:
         data = request.dict()
-
-        
-
-     
-
         userDict = await registerUserHandler(            
             data["firstName"], 
             data["lastName"],
             data["email"],
             data["password"]
         )
-
-
-
-
         jwtToken = userDict["token"]
         del userDict["token"]
 
@@ -59,9 +48,11 @@ async def register_user(request: RegisterRequest):
 
 @authRouter.post("/login", status_code=status.HTTP_201_CREATED)
 async def login_user(request: LoginRequest):
+    """
+    Authenticates a user and returns a JSON response with user details and a JWT token.
+    """
     try:
         data = request.dict()
-
 
         user  = await loginUserHandler(data["email"], data["password"])
         jwtToken = user["token"]

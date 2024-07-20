@@ -20,10 +20,9 @@ credentials_exception = HTTPException(
             "message": f"Could not validate credentials"},
     )
 
-def statusProtected(token: str = Depends(oauth2_scheme)):
+def LoginProtected(token: str = Depends(oauth2_scheme)):
     try:
         payload = jwt.decode(token, HASHING_SECRET_KEY, algorithms=[HASH_ALGORITHM])
-        print(payload)
         id: str = payload.get("id")
         if id == None:
             raise credentials_exception

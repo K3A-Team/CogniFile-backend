@@ -17,8 +17,26 @@ firebase_admin.initialize_app(cred,{
 db = firestore.client()
 
 class Database:
+
+    """
+    This class provides a collection of static methods for interacting with a Firestore database.
+
+    The methods in this class are designed to perform various database operations such as:
+    - Adding new documents to collections
+    - Retrieving documents from collections
+    - Updating existing documents
+    - Deleting documents from collections
+
+    Each method is implemented as a static method, meaning they can be called on the class itself without needing to instantiate an object of the class. This design choice makes it convenient to use these methods as utility functions for database operations throughout the application.
+
+    The class leverages the Firestore client library to communicate with the Firestore database, ensuring that all interactions are handled efficiently and securely.
+
+    Overall, this class serves as a centralized utility for all Firestore database interactions, promoting code reusability and maintainability.
+    """
+
     @staticmethod
     async def store(collection , document , dict):
+
         doc_ref = db.collection(collection).document(document)
         return doc_ref.set(dict)
 
