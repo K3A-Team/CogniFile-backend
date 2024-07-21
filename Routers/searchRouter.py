@@ -2,7 +2,7 @@ from fastapi import APIRouter,Depends
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from handlers.searchHandler import nlp_search_handler
-from Middlewares.authProtectionMiddlewares import statusProtected
+from Middlewares.authProtectionMiddlewares import LoginProtected
 
 
 
@@ -14,7 +14,7 @@ class SearchRequest(BaseModel):
     query: str
     
 @searchRouter.post("/natural_language")
-async def performNaturalLanguageSearch(request: SearchRequest,userID: str = Depends(statusProtected)):
+async def performNaturalLanguageSearch(request: SearchRequest,userID: str = Depends(LoginProtected)):
     try:
         result = await nlp_search_handler(request.query,userID)
         return {"success": True, "result": result}
