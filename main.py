@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, Header
 from Routers.authRouter import authRouter
 from Routers.storageRouter import storageRouter
 from Routers.userRouter import userRouter
+from Routers.searchRouter import searchRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -28,6 +29,9 @@ app.include_router(storageRouter, tags=["storage"], prefix="/storage")
 
 # Include the user router with the prefix "/user" and tag "user"
 app.include_router(userRouter, tags=["user"], prefix="/user")
+
+app.include_router(searchRouter,tags=["search"], prefix="/search" )
+
 
 # Start the server with the following command:
 # uvicorn main:app --reload

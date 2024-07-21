@@ -8,9 +8,12 @@ from starlette.responses import JSONResponse
 from fastapi import UploadFile
 from fastapi import File
 import uuid
+from dotenv import load_dotenv
+import os
+import io
 from Models.Entities.StorageFile import StorageFile
 from Models.Entities.Folder import Folder
-from Core.Shared.Utils import storeInStorageHandler
+from services.upsertService import process_and_upsert_service
 
 
 
@@ -18,7 +21,6 @@ from Core.Shared.Utils import storeInStorageHandler
 async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...) ):
     """
     Creates a file in the specified folder and stores it in Firebase Storage.
-
     Args:
         userID (str): The ID of the user creating the file.
         folderId (str): The ID of the folder where the file will be stored.
@@ -47,8 +49,9 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     readId = parentFolder["readId"]
     writeId = parentFolder["writeId"]
     name = file.filename
-    url = await storeInStorageHandler(file)
         
+    url = await storeInStorageHandler(file)
+    
     fileObj = StorageFile(
         name=name,
         ownerId=userID,
@@ -58,6 +61,8 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         url=url
     )
     
+    await process_and_upsert_service(file,fileObj.id,userID)
+
     #update parent folder
     parentFolder["files"].append(fileObj.id)
     await Database.edit("folders", folderId, parentFolder)
