@@ -2,6 +2,9 @@ from typing import List
 import uuid
 
 class Folder:
+    """
+    Represents a folder entity in the file management system.
+    """
     def __init__(
             self, 
             name: str,

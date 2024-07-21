@@ -9,15 +9,27 @@ from datetime import datetime
 from Middlewares.authProtectionMiddlewares import *
 from fastapi import UploadFile
 from fastapi import File
-from dotenv import load_dotenv
 from Core.Shared.Security import *
 import uuid
 from Models.Entities.User import User
 from handlers.storageHandlers.foldersHandlers import createFolderHandler
 
 async def registerUserHandler(firstname : str, lastname : str, email : str, password : str):
+    """
+    Registers a new user, creates a root folder for them, and returns their data with a JWT token.
 
+    Args:
+        firstname (str): The first name of the user.
+        lastname (str): The last name of the user.
+        email (str): The email of the user.
+        password (str): The password of the user.
 
+    Returns:
+        dict: The registered user's data, including a JWT token.
+
+    Raises:
+        Exception: If a user with the given email already exists.
+    """
     email = email.lower()
 
     result = db.collection("users").where(
@@ -45,7 +57,6 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
 
     await Database.store("users", user.id, userDict)
     
-
     del userDict["password"]
 
     jwtToken = createJwtToken({"id": userDict["id"]})
@@ -57,7 +68,19 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
     return userDict
 
 async def loginUserHandler(email,password):
+    """
+    Authenticates a user by their email and password, and returns their data with a JWT token.
 
+    Args:
+        email (str): The email of the user.
+        password (str): The password of the user.
+
+    Returns:
+        dict: The authenticated user's data, including a JWT token.
+
+    Raises:
+        Exception: If the email does not exist or the credentials are invalid.
+    """
     email = email.lower()
 
     result = db.collection("users").where(

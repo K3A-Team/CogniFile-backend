@@ -1,6 +1,9 @@
 import uuid
 
 class User:
+    """
+    Represents a user in the file management system.
+    """
     def __init__(self, firstName: str, lastName: str, email: str, password: str, rootFolderId :str,id : str = None):
         self.id = id or str(uuid.uuid4())
         self.firstName: str = firstName

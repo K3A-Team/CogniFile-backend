@@ -1,7 +1,15 @@
+# .gitignore
+
+## Python
 __pycache__
+
+## Environment Variables
 server-env
-/.env
+.env
 /env
-/backend/.env
+
+## Firebase Configuration
 firebase.json
+
+## Temporary Files
 TEMP_FILES
