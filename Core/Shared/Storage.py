@@ -8,8 +8,27 @@ import uuid
 db = storage.bucket()
 
 class Storage:
+    """
+    The Storage class provides methods to interact with Firebase Storage, 
+    including storing and deleting files. It includes methods to upload a file to Firebase Storage and retrieve its public URL, 
+    as well as to delete a file from Firebase Storage. 
+    The class handles potential exceptions related to Firebase operations.
+    """
     @staticmethod
     def store(file, filename):
+        """
+        Stores a file in Firebase Storage and returns its public URL.
+
+        Args:
+            file: The file to be stored.
+            filename (str): The name to be used for the stored file.
+
+        Returns:
+            str: The public URL of the stored file.
+
+        Raises:
+            google.cloud.exceptions.GoogleCloudError: If there is an error uploading the file.
+        """
         blob = db.blob(filename)
         blob.metadata = {"firebaseStorageDownloadTokens": str(uuid.uuid4())}
         
@@ -21,6 +40,12 @@ class Storage:
 
     @staticmethod
     def delete(filename):
+        """
+        Deletes a file from Firebase Storage.
+        Args: filename (str): The name of the file to be deleted.
+        Returns: None
+        Raises: google.cloud.exceptions.GoogleCloudError: If there is an error deleting the file.
+        """
         blob = db.blob(filename)
         return blob.delete()
     

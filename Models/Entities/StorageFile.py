@@ -2,6 +2,9 @@ from typing import List
 import uuid
 
 class StorageFile:
+    """
+        Represents a file stored in the file management system.
+    """
     def __init__(
             self, 
             name: str, 
@@ -20,7 +23,6 @@ class StorageFile:
         self.writeId = writeId
         self.url = url
 
-
     def to_dict(self) -> dict:
         return {
             "id": self.id,
@@ -30,5 +32,4 @@ class StorageFile:
             "readId": self.readId,
             "writeId": self.writeId,
             "url": self.url
-
         }

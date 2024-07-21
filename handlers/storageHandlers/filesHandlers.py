@@ -1,5 +1,4 @@
 from fastapi import APIRouter, status, Depends
-from Middlewares.authProtectionMiddlewares import statusProtected
 from Core.Shared.Database import Database, db
 from Core.Shared.Storage import *
 from Core.Shared.Security import *
@@ -9,26 +8,28 @@ from starlette.responses import JSONResponse
 from fastapi import UploadFile
 from fastapi import File
 import uuid
-from dotenv import load_dotenv
-import os
 from Models.Entities.StorageFile import StorageFile
 from Models.Entities.Folder import Folder
+from Core.Shared.Utils import storeInStorageHandler
 
 
-load_dotenv()
 
-
-async def storeInStorageHandler(file: UploadFile = File(...)):
-
-        time = int(datetime.now().timestamp())
-        fileID = str(time) + file.filename
-        file.filename = fileID
-        f = file.file
-        url = Storage.store(f, fileID)
-        
-        return url
 
 async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...) ):
+    """
+    Creates a file in the specified folder and stores it in Firebase Storage.
+
+    Args:
+        userID (str): The ID of the user creating the file.
+        folderId (str): The ID of the folder where the file will be stored.
+        file (UploadFile): The file to be uploaded.
+
+    Returns:
+        dict: The created file's data.
+
+    Raises:
+        Exception: If the folder ID is not specified, the folder does not exist, or the user does not have write permissions.
+    """
     parentFolder = None
     readId = []
     writeId = []
@@ -65,6 +66,19 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     return fileDict
 
 async def getFileHandler(userID:str, fileID: str):
+    """
+    Retrieves a file's data if the user has access permissions.
+
+    Args:
+        userID (str): The ID of the user requesting the file.
+        fileID (str): The ID of the file to be retrieved.
+
+    Returns:
+        dict: The requested file's data.
+
+    Raises:
+        Exception: If the user does not have read or write permissions for the file.
+    """
     file = await Database.getFile(fileID=fileID)
     if ((userID != file["ownerId"]) and (userID not in file["readId"]) and (userID not in file["writeId"])):
         raise Exception("You are not allowed to access this directory")
