@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import os
 from Models.Entities.StorageFile import StorageFile
 from Models.Entities.Folder import Folder
+from services.upsertService import process_and_upsert_service
 
 
 load_dotenv()
@@ -46,8 +47,11 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     readId = parentFolder["readId"]
     writeId = parentFolder["writeId"]
     name = file.filename
-    url = await storeInStorageHandler(file)
         
+    url = await storeInStorageHandler(file)
+    
+    process_and_upsert_service(file)
+
     fileObj = StorageFile(
         name=name,
         ownerId=userID,

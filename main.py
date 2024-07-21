@@ -3,6 +3,7 @@ from fastapi import FastAPI, Depends, Header
 from Routers.authRouter import authRouter
 from Routers.storageRouter import storageRouter
 from Routers.userRouter import userRouter
+from Routers.searchRouter import searchRouter
 from fastapi.middleware.cors import CORSMiddleware
 from Middlewares.authProtectionMiddlewares import statusProtected
 
@@ -34,6 +35,7 @@ app.include_router(storageRouter, tags=["storage"], prefix="/storage")
 
 app.include_router(userRouter, tags=["user"], prefix="/user")
 
+app.include_router(searchRouter,tags=["search"], prefix="/search" )
 
 
 # Start the server with the following command:
