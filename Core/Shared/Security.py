@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 from base64 import b64decode
 import os
 
-
 load_dotenv()
 
 TOKEN_LIFE_TIME = int(os.getenv("TOKEN_LIFE_TIME"))

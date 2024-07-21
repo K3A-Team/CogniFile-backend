@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Depends
-from Middlewares.authProtectionMiddlewares import LoginProtected
+from fastapi import APIRouter
 from Core.Shared.Storage import *
 from Core.Shared.Security import *
 from Core.Shared.Utils import *

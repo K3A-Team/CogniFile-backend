@@ -1,6 +1,6 @@
-from Core.Shared.Database import Database , db
+from Core.Shared.Database import db
 from datetime import datetime
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import HTTPException
 from fastapi import status
 from Core.Shared.ErrorResponses import *
 from fastapi import UploadFile

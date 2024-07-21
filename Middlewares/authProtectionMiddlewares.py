@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, HTTPException, Request
 from fastapi import status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
@@ -8,7 +8,6 @@ load_dotenv()
 
 HASH_ALGORITHM = os.getenv("HASH_ALGORITHM")
 HASHING_SECRET_KEY = os.getenv("HASHING_SECRET_KEY")
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

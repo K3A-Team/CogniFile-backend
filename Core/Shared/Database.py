@@ -40,7 +40,6 @@ class Database:
         doc_ref = db.collection(collection).document(document)
         return doc_ref.set(dict)
 
-
     @staticmethod
     async def read(collection , document):
         doc_ref = db.collection(collection).document(document)
@@ -48,13 +47,11 @@ class Database:
             return doc_ref.get().to_dict()
         else:
             return None
- 
 
     @staticmethod
     async def edit(collection , document,querydict):
         doc_ref = db.collection(collection).document(document)
         return  doc_ref.update(querydict)
-
 
     @staticmethod
     async def delete(collection , document):

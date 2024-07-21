@@ -1,16 +1,8 @@
-from fastapi import APIRouter, status, Depends
 from Routers.storageRouter import storageRouter
 from Core.Shared.ErrorResponses import *
 from Core.Shared.Database import Database , db
 from Core.Shared.Security import *
-from Core.Shared.Storage import Storage
 from Core.Shared.Utils import *
-from starlette.responses import JSONResponse
-from fastapi import File
-from fastapi import UploadFile
-import os
-import uuid
-import mimetypes
 
 async def getProfileHandler(userID: str):
     """

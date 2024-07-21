@@ -4,8 +4,6 @@ from pydantic import BaseModel
 from handlers.searchHandler import nlp_search_handler
 from Middlewares.authProtectionMiddlewares import LoginProtected
 
-
-
 load_dotenv()
 
 searchRouter = APIRouter()
@@ -21,4 +19,3 @@ async def performNaturalLanguageSearch(request: SearchRequest,userID: str = Depe
 
     except Exception as e:
         return {"success": False, "message": str(e)}
-    

@@ -1,14 +1,7 @@
 from fastapi import APIRouter, status, Depends
-from Models.Requests.AuthRequestsModels import RegisterRequest, LoginRequest
 from Core.Shared.Database import Database, db
-from Core.Shared.Storage import Storage
-from Core.Shared import Security
-from starlette.responses import JSONResponse
 from Core.Shared.ErrorResponses import *
-from datetime import datetime
 from Middlewares.authProtectionMiddlewares import *
-from fastapi import UploadFile
-from fastapi import File
 from Core.Shared.Security import *
 import uuid
 from Models.Entities.User import User

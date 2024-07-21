@@ -6,7 +6,6 @@ import PyPDF2
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import io
 
-
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
 
 index_name = "testing-index"

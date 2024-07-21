@@ -36,5 +36,3 @@ class Folder:
             "subFolders": self.subFolders,
             "files": self.files
         }
-    
-

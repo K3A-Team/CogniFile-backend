@@ -1,22 +1,12 @@
-from fastapi import APIRouter, status, Depends
-from Core.Shared.Database import Database, db
+from Core.Shared.Database import Database
 from Core.Shared.Storage import *
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
 from Core.Shared.ErrorResponses import *
-from starlette.responses import JSONResponse
 from fastapi import UploadFile
 from fastapi import File
-import uuid
-from dotenv import load_dotenv
-import os
-import io
 from Models.Entities.StorageFile import StorageFile
-from Models.Entities.Folder import Folder
 from services.upsertService import process_and_upsert_service
-
-
-
 
 async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...) ):
     """
@@ -85,7 +75,7 @@ async def getFileHandler(userID:str, fileID: str):
         Exception: If the user does not have read or write permissions for the file.
     """
     file = await Database.getFile(fileID=fileID)
-    if ((userID != file["ownerId"]) and (userID not in file["readId"]) and (userID not in file["writeId"])):
+    if ((userID != file["ownerId"]) and (userID not in file["readId"])):
         raise Exception("You are not allowed to access this directory")
     else:
         return file

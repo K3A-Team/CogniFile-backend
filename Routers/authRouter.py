@@ -1,23 +1,12 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status
 from Models.Requests.AuthRequestsModels import RegisterRequest, LoginRequest
-from Core.Shared.Database import Database, db
-from Core.Shared.Storage import Storage
-from Core.Shared import Security
 from starlette.responses import JSONResponse
 from Core.Shared.ErrorResponses import *
-from datetime import datetime
 from Middlewares.authProtectionMiddlewares import *
-from fastapi import UploadFile
-from fastapi import File
-from dotenv import load_dotenv
 from Core.Shared.Security import *
-import uuid
-from Models.Entities.User import User
 from handlers.authHandlers import registerUserHandler , loginUserHandler
 
-
 authRouter = APIRouter()
-
 
 @authRouter.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(request: RegisterRequest):
@@ -43,7 +32,7 @@ async def register_user(request: RegisterRequest):
         return response
 
     except Exception as e:
-       return {"success": False, "message": str(e)}
+        return {"success": False, "message": str(e)}
 
 
 @authRouter.post("/login", status_code=status.HTTP_201_CREATED)
