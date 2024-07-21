@@ -28,15 +28,15 @@ async def createFile(
         folderId: str,
         file : UploadFile = File(...),
         userID: str = Depends(statusProtected)):
-    try:
-        parentFolderID = folderId
+    #try:
+    parentFolderID = folderId
 
-        folderDict = await createFileHandler(userID=userID,folderId=parentFolderID, file=file)
+    folderDict = await createFileHandler(userID=userID,folderId=parentFolderID, file=file)
 
-        return {"success": True, "file": folderDict}
+    return {"success": True, "file": folderDict}
 
-    except Exception as e:
-        return {"success": False, "message": str(e)}
+    #except Exception as e:
+    #    return {"success": False, "message": str(e)}
     
 @filesRouter.get("/file/{fileId}", status_code=status.HTTP_200_OK)
 async def getFile(fileId : str ,userID: str = Depends(statusProtected)):

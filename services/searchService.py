@@ -18,9 +18,7 @@ model = ChatGoogleGenerativeAI(model="gemini-1.5-pro",temperature=MODEL_TEMP,goo
 
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key=os.getenv("GEMINI_API_KEY"))
 
-vectorstore = PineconeVectorStore(index, embeddings, text_key="text")
 
-retriever = vectorstore.as_retriever(search_kwargs={"k": NUM_SEARCH_RESULTS})
 
 
 prompt = [
@@ -30,16 +28,30 @@ prompt = [
     ),
     ("human", "place holder")
 ]
+def extract_unique_file_ids(data):
+    file_ids = set()
+    for match in data['matches']:
+        if 'file_id' in match['metadata']:
+            file_ids.add(match['metadata']['file_id'])
+    return list(file_ids)
 
-
-def nlp_search_service(query):
+def nlp_search_service(query,userID):
 
     prompt[1] = ("human", query)
     
     infos_extraction_response = model.invoke(prompt)
-    
+        
     relevant_infos = infos_extraction_response.content
     
-    vectors = retriever.invoke(query)
+    embeded_query = embeddings.embed_query(relevant_infos)
     
-    return vectors
+    vectors = index.query(
+                vector=embeded_query,
+                top_k=NUM_SEARCH_RESULTS,
+                filter={
+                    "user_id": userID
+                },
+                include_metadata=True            
+            )
+    print(vectors)
+    return  extract_unique_file_ids(vectors)

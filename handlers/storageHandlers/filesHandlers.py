@@ -11,6 +11,7 @@ from fastapi import File
 import uuid
 from dotenv import load_dotenv
 import os
+import io
 from Models.Entities.StorageFile import StorageFile
 from Models.Entities.Folder import Folder
 from services.upsertService import process_and_upsert_service
@@ -21,15 +22,18 @@ load_dotenv()
 
 async def storeInStorageHandler(file: UploadFile = File(...)):
 
-        time = int(datetime.now().timestamp())
-        fileID = str(time) + file.filename
-        file.filename = fileID
-        f = file.file
-        url = Storage.store(f, fileID)
-        
-        return url
+    time = int(datetime.now().timestamp())
+    fileID = str(time) + file.filename
+    file.filename = fileID
+    f = file.file
+    url = Storage.store(f, fileID)
+    
+    file.file.seek(0)
+    
+    return url
 
 async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...) ):
+    
     parentFolder = None
     readId = []
     writeId = []
@@ -50,8 +54,6 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         
     url = await storeInStorageHandler(file)
     
-    process_and_upsert_service(file)
-
     fileObj = StorageFile(
         name=name,
         ownerId=userID,
@@ -61,6 +63,8 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         url=url
     )
     
+    await process_and_upsert_service(file,fileObj.id,userID)
+
     #update parent folder
     parentFolder["files"].append(fileObj.id)
     await Database.edit("folders", folderId, parentFolder)

@@ -4,6 +4,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from fastapi import UploadFile
 import PyPDF2
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import io
 
 
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
@@ -35,6 +36,7 @@ async def read_pdf(file: UploadFile):
 
 async def read_txt(file: UploadFile):
     content = await file.read()
+    print(content)
     return content.decode('utf-8')
     
 def split_text(text):
@@ -46,20 +48,26 @@ def split_text(text):
     chunks = text_splitter.split_text(text)
     return chunks
 
-def upsert_to_pinecone(chunks, file_name):
+def upsert_to_pinecone(chunks, file_name,id_file,userID):
     batch_size = 100
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i:i+batch_size]
         ids = [f"{file_name}_{j}" for j in range(i, i+len(batch))]
         embeds = embeddings.embed_documents(batch)
-        metadata = [{"text": chunk, "file_id": file_name} for chunk in batch]
+        metadata = [{"text": chunk, "file_id": id_file, "user_id": userID} for chunk in batch]
         to_upsert = zip(ids, embeds, metadata)
         _ = index.upsert(vectors=list(to_upsert))
         
-def process_and_upsert_service(file):
+async def process_and_upsert_service(file,id_file,userID):
 
-    text = read_file(file)
-
+    text = await read_file(file)
+    
+    print('the extracted text : ',text)
+    
     chunks = split_text(text)
 
-    upsert_to_pinecone(chunks, file.filename)
+    print('the extracted chunks : ',file.filename)
+
+    upsert_to_pinecone(chunks, file.filename,id_file,userID)
+    
+    file.file.seek(0)
