@@ -10,6 +10,7 @@ This repository contains the backend implementation for an advanced file managem
 - **Natural Language Search**: Supports multiple languages and voice input
 - **Automatic File Categorization**: Tags files based on content (e.g., financial, marketing, studies)
 - **Automatic File Hierarchy Suggestion**: Proposes optimal file organization structures
+  
 **Other Features**
 - **Duplicate File Detection**: Identifies and manages duplicate files
 - **Local Deployment Option**: Ability to deploy the application on local infrastructure
