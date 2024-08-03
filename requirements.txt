@@ -43,7 +43,7 @@ MarkupSafe==2.1.5
 mccabe==0.7.0
 mdurl==0.1.2
 msgpack==1.0.8
-numpy==1.22.4
+numpy==1.23.2
 pandas==2.2.2
 platformdirs==4.2.2
 proto-plus==1.24.0

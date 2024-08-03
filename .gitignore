@@ -13,3 +13,6 @@ firebase.json
 
 ## Temporary Files
 TEMP_FILES
+
+## Virtual Environment
+venv
