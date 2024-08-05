@@ -60,12 +60,8 @@ def upsert_to_pinecone(chunks, file_name,id_file,userID):
 async def process_and_upsert_service(file,id_file,userID):
 
     text = await read_file(file)
-    
-    print('the extracted text : ',text)
-    
+        
     chunks = split_text(text)
-
-    print('the extracted chunks : ',file.filename)
 
     upsert_to_pinecone(chunks, file.filename,id_file,userID)
     

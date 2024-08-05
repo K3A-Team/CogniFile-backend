@@ -50,7 +50,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         writeId=writeId,
         url=url
     )
-    
+
     await process_and_upsert_service(file,fileObj.id,userID)
 
     #update parent folder
