@@ -3,6 +3,7 @@ from Routers.authRouter import authRouter
 from Routers.storageRouter import storageRouter
 from Routers.userRouter import userRouter
 from Routers.searchRouter import searchRouter
+from Routers.fileHierarchyRouter import fileHierarchyRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -31,6 +32,8 @@ app.include_router(storageRouter, tags=["storage"], prefix="/storage")
 app.include_router(userRouter, tags=["user"], prefix="/user")
 
 app.include_router(searchRouter,tags=["search"], prefix="/search" )
+
+app.include_router(fileHierarchyRouter,tags=["hierarchy"], prefix="/hierarchy" )
 
 
 # Start the server with the following command:
