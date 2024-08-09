@@ -68,10 +68,42 @@ def get_folder_hierarchy(folder_id):
     
     return hierarchy
 
+def get_folder_hierarchy_names_only(folder_id):
+    folder_ref = db.collection('folders').document(folder_id)
+    folder_doc = folder_ref.get()
+    
+    if not folder_doc.exists:
+        return None
+    
+    folder_data = folder_doc.to_dict()
+    hierarchy = {
+        'name': folder_data.get('name', ''),
+        'children': [],
+        'files': []
+    }
+    
+    # Get files
+    if 'files' in folder_data:
+        file_refs = [db.collection('files').document(file_id) for file_id in folder_data['files']]
+        file_docs = db.get_all(file_refs)
+        for file_doc in file_docs:
+            if file_doc.exists:
+                file_data = file_doc.to_dict()
+                hierarchy['files'].append(file_data.get('name', ''))
+    
+    # Recursively get subfolders
+    if 'subFolders' in folder_data:
+        for subfolder_id in folder_data['subFolders']:
+            subfolder = get_folder_hierarchy_names_only( subfolder_id)
+            if subfolder:
+                hierarchy['children'].append(subfolder)
+    
+    return hierarchy
+
 def optimize_hierarchy(folder_id):
     
     # Building and sending the prompt
-    folder_hierarchy = json.dumps(get_folder_hierarchy(folder_id))
+    folder_hierarchy = json.dumps(get_folder_hierarchy_names_only(folder_id))
     llm_prompt = PROMPT_TEMPLATE.format_messages(
         current_structure = folder_hierarchy
     )
