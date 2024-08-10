@@ -74,7 +74,6 @@ async def storeInStorageHandler(file: UploadFile = File(...)):
         file.filename = fileID
         f = file.file
         url = Storage.store(f, fileID)
-        
         return url
     
 

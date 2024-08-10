@@ -1,3 +1,5 @@
+from Models.Entities.FileHash import FileHash
+from google.cloud import firestore
 from Core.Shared.Database import Database
 from Core.Shared.Storage import *
 from Core.Shared.Security import *
@@ -6,9 +8,11 @@ from Core.Shared.ErrorResponses import *
 from fastapi import UploadFile
 from fastapi import File
 from Models.Entities.StorageFile import StorageFile
+from services.hashService import generate_file_hash, get_readable_file_size, is_file_duplicate
+from services.maliciousDetectionService import is_file_malicious
 from services.upsertService import process_and_upsert_service
 
-async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...) ):
+async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...), force: bool | None = None):
     """
     Creates a file in the specified folder and stores it in Firebase Storage.
     Args:
@@ -25,6 +29,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     parentFolder = None
     readId = []
     writeId = []
+    tags = []
 
     if folderId is None:
         raise Exception("You must specify a folder to store the file in")
@@ -36,19 +41,67 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
 
     if ((userID != parentFolder["ownerId"]) and (userID not in parentFolder["writeId"])):
         raise Exception("You are not allowed to create a folder in this directory")
+    
+    file_content = await file.read()
+    file_hash = generate_file_hash(file_content)
+    await file.seek(0)
+    
+    name, ext = os.path.splitext(file.filename)
+    
+    duplicate_check = await is_file_duplicate(file_hash, folderId)
+    if duplicate_check["is_duplicate"]:
+        if not force:
+            raise HTTPException(status_code=400, detail="File is a duplicate! Want to proceed? Use the force parameter.")
+        else:
+            last_duplicate = duplicate_check["last_duplicate"]
+            increment = 1
+
+            if last_duplicate:
+                last_name, last_ext = os.path.splitext(last_duplicate["filename"])
+                if "_duplicate" in last_name:
+                    try:
+                        increment = int(last_name.split("_duplicate")[-1]) + 1
+                    except ValueError:
+                        pass
+                else:
+                    name = os.path.splitext(file.filename)[0]
+            else:
+                raise HTTPException(status_code=400, detail="No last duplicate found")
+
+            name = f"{name}_duplicate{increment}{ext}"
+            tags.append("duplicate")
+    else:
+        name = f"{name}{ext}"
+
+    if (await is_file_malicious(file_content)):
+        tags.append("malicious")
+
+    hashObj = FileHash(
+        filename=name,
+        hash=file_hash,
+        ownerId=userID,
+        folderId=folderId,
+        uploaded_at=firestore.SERVER_TIMESTAMP
+    )
+
+    url = await storeInStorageHandler(file)
+
+    await Database.store("file_hashes", hashObj.id, hashObj.to_dict())
+    
     readId = parentFolder["readId"]
     writeId = parentFolder["writeId"]
-    name = file.filename
-        
-    url = await storeInStorageHandler(file)
     
+    readable_file_size = get_readable_file_size(len(file_content))
+
     fileObj = StorageFile(
         name=name,
         ownerId=userID,
         folder=folderId,
         readId=readId,
         writeId=writeId,
-        url=url
+        url=url,
+        size=readable_file_size,
+        tags=tags,
     )
     
     await process_and_upsert_service(file,fileObj.id,userID)
