@@ -1,4 +1,4 @@
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, status, Depends, Form
 from Middlewares.authProtectionMiddlewares import LoginProtected
 from Core.Shared.Storage import *
 from Core.Shared.Security import *
@@ -17,14 +17,14 @@ foldersRouter = APIRouter()
 
 @foldersRouter.post("/{folderId}/folder", status_code=status.HTTP_201_CREATED)
 async def createSubFodler(
-        ceateFolderRequest: CreateFolderRequest,
+        createFolderRequest: CreateFolderRequest,
         folderId: str,
         userID: str = Depends(LoginProtected)):
     """
     Creates a subfolder within the specified folder; the logic is handled inside the handler.
     """
     try:
-        request = ceateFolderRequest.dict()
+        request = createFolderRequest.dict()
         folderName = request["folderName"]
         parentFolderID = folderId
 
@@ -35,14 +35,14 @@ async def createSubFodler(
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-@foldersRouter.get("/{folderId}", status_code=status.HTTP_201_CREATED)
-async def getFolder(folderId : str ,userID: str = Depends(LoginProtected)):
+@foldersRouter.get("/{folderId}", status_code=status.HTTP_200_OK)
+async def getFolder(folderId : str, search: str = None, userID: str = Depends(LoginProtected)):
     """
     Retrieves the details of the specified folder; the logic is handled inside the handler.
     """
     try:
 
-        folderDict = await getFolderHandler(userID=userID, folderID=folderId)
+        folderDict = await getFolderHandler(userID=userID, folderID=folderId, search=search)
 
         return {"success": True, "folder": folderDict}
 
@@ -53,14 +53,14 @@ async def getFolder(folderId : str ,userID: str = Depends(LoginProtected)):
 async def createFile(
         folderId: str,
         file : UploadFile = File(...),
+        force: bool | None = Form(None),
         userID: str = Depends(LoginProtected)):
     """
     Uploads a new file to the specified folder and returns the file details.
     """
     try:
         parentFolderID = folderId
-
-        folderDict = await createFileHandler(userID=userID,folderId=parentFolderID, file=file)
+        folderDict = await createFileHandler(userID=userID,folderId=parentFolderID, file=file, force=force)
 
         return {"success": True, "file": folderDict}
 

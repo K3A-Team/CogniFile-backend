@@ -8,18 +8,22 @@ class StorageFile:
             self, 
             name: str, 
             folder: str,
-            ownerId: str , 
+            ownerId: str, 
+            size: str,
             url : str,
             id : str = None,
+            tags: List[str] = [],
             readId : List[str] = [], 
             writeId : List[str] = [],
         ):
         self.id = id or str(uuid.uuid4())
         self.name = name
         self.folder = folder
+        self.size = size
         self.ownerId = ownerId
         self.readId = readId
         self.writeId = writeId
+        self.tags = tags
         self.url = url
 
     def to_dict(self) -> dict:
@@ -27,6 +31,8 @@ class StorageFile:
             "id": self.id,
             "name": self.name,
             "folder": self.folder,
+            "size": self.size,
+            "tags": self.tags,
             "ownerId": self.ownerId,
             "readId": self.readId,
             "writeId": self.writeId,
