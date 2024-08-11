@@ -85,3 +85,5 @@ langchain-google-genai
 langchain-pinecone
 PyPDF2
 langchain
+langchain-community
+pypdf

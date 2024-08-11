@@ -23,8 +23,7 @@ embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_ap
 
 vectorstore = PineconeVectorStore(index, embeddings, text_key="text")
 
-memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True) # Will change once we are done with the session management
 
 def chatbot_service(query,userID):
     metadata_filter={"user_id": userID}
