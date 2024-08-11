@@ -8,9 +8,7 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain_pinecone import PineconeVectorStore
 
-
-
-MODEL_TEMP = 0.7
+MODEL_TEMP = 0.0
 NUM_SEARCH_RESULTS = 5
 
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
@@ -27,12 +25,15 @@ vectorstore = PineconeVectorStore(index, embeddings, text_key="text")
 
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-qa_chain = ConversationalRetrievalChain.from_llm(
-    llm=model,
-    retriever=vectorstore.as_retriever(),
-    memory=memory
-)
 
 def chatbot_service(query,userID):
+    metadata_filter={"user_id": userID}
+    qa_chain = ConversationalRetrievalChain.from_llm(
+        llm=model,
+        retriever=vectorstore.as_retriever(search_kwargs={"filter": metadata_filter}),
+        memory=memory
+    )
+    print(memory.load_memory_variables({}))
     result = qa_chain({"question": query})
+    print(memory.load_memory_variables({}))
     return result['answer']
