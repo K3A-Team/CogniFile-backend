@@ -67,7 +67,7 @@ def upsert_to_pinecone(chunks, file_name,id_file,userID):
         
 async def process_and_upsert_service(file,id_file,userID,url):
 
-    text = await read_file(file)
+    text = await read_file(file,url)
     
     print('the extracted text : ',text)
     
