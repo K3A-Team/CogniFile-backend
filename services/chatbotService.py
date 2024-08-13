@@ -58,7 +58,6 @@ async def chatbot_service(query,userID):
   user_chating_history = InMemoryChatMessageHistory()  
   user_chating_history.add_messages(full_conv)   
   memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True,chat_memory=user_chating_history)
-  print(memory.buffer_as_messages)
   
   #Perform the query
   metadata_filter={"user_id": userID}
@@ -84,15 +83,9 @@ async def chatbot_service(query,userID):
   return result['answer']
 
 async def clear_chat_service(userID):
-  print('1')
   user = await Database.read("users", userID)
-  print('1')
   user_chatbot_session_id = user["chatbotSessionId"]
-  print('1')
   db_user_chatbot_session = await Database.read("chatbotSession",user_chatbot_session_id)
-  print('1')
   user_chatbot_session = ChatBotSession(conversation=db_user_chatbot_session["conversation"],id=db_user_chatbot_session['id'])
-  print('1')
   await user_chatbot_session.clear()
-  print('1')
   return 'Session Cleared successfuly'
