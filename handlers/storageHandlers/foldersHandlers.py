@@ -39,16 +39,17 @@ async def createFolderHandler(userID:str, folderName: str , parentFolderID: str 
     folderDict = await Database.createFolder(folder)
     return folderDict
 
-async def getFolderHandler(userID:str, folderID: str):
+async def getFolderHandler(userID: str, folderID: str, search: str):
     """
-    Retrieves a folder's data if the user has access permissions.
+    Retrieves a folder's data if the user has access permissions and filters based on the search term.
 
     Args:
         userID (str): The ID of the user requesting the folder.
         folderID (str): The ID of the folder to be retrieved.
+        search (str): The search term to filter the files and folders.
 
     Returns:
-        dict: The requested folder's data.
+        dict: The requested folder's data with all files and folders that match the search term, without hierarchy.
 
     Raises:
         Exception: If the user does not have read or write permissions for the folder.
@@ -56,5 +57,65 @@ async def getFolderHandler(userID:str, folderID: str):
     folder = await Database.getFolder(folderID)
     if ((userID != folder["ownerId"]) and (userID not in folder["readId"]) and (userID not in folder["writeId"])):
         raise Exception("You are not allowed to access this directory")
-    else:
-        return folder
+    
+    if search:
+        matching_content = await searchContentInFolderRecursive(folderID, search, userID)
+        folder["files"] = matching_content["files"]
+        folder["subFolders"] = matching_content["subFolders"]
+        folder["readId"] = matching_content["readId"]
+        folder["writeId"] = matching_content["writeId"]
+    
+    return folder
+
+
+async def searchContentInFolderRecursive(folderID: str, searchTerm: str, userID: str):
+    folder = await Database.read("folders", folderID)
+    all_files = await Database.getFilesDetails(folder.get("files", []))
+    all_sub_folders = await Database.getSubFoldersDetails(folder.get("subFolders", []))
+    all_rw_users = await Database.getRWUsersDetails({
+        "readId": folder.get("readId", []),
+        "writeId": folder.get("writeId", [])
+    }, ["id", "firstName", "lastName"])
+
+    def contains_search_term(item):
+        return searchTerm.lower() in item["name"].lower()
+
+    matching_files = [
+        file for file in all_files if (
+            contains_search_term(file) or 
+            any(
+                searchTerm.lower() in user["firstName"].lower() or 
+                searchTerm.lower() in user["lastName"].lower()
+                for user in all_rw_users.get("readId", []) + all_rw_users.get("writeId", [])
+            ) or 
+            any(searchTerm.lower() in tag.lower() for tag in file.get("tags", []))
+        )
+    ]
+
+    matching_sub_folders = [
+        subFolder for subFolder in all_sub_folders if contains_search_term(subFolder) or any(
+            searchTerm.lower() in user["firstName"].lower() or searchTerm.lower() in user["lastName"].lower()
+            for user in all_rw_users.get("readId", []) + all_rw_users.get("writeId", [])
+        )
+    ]
+
+    for subFolder in all_sub_folders:
+        subFolderContent = await searchContentInFolderRecursive(subFolder["id"], searchTerm, userID)
+        matching_files.extend(subFolderContent["files"])
+        matching_sub_folders.extend(subFolderContent["subFolders"])
+
+    matching_read_users = [
+        user["id"] for user in all_rw_users.get("readId", [])
+        if ((userID != user["id"]) and (searchTerm.lower() in user["firstName"].lower() or searchTerm.lower() in user["lastName"].lower()))
+    ]
+    matching_write_users = [
+        user["id"] for user in all_rw_users.get("writeId", [])
+        if ((userID != user["id"]) and (searchTerm.lower() in user["firstName"].lower() or searchTerm.lower() in user["lastName"].lower()))
+    ]
+
+    return {
+        "files": matching_files,
+        "subFolders": matching_sub_folders,
+        "readId": matching_read_users if matching_read_users else all_rw_users.get("readId", []),
+        "writeId": matching_write_users if matching_write_users else all_rw_users.get("writeId", []),
+    }
