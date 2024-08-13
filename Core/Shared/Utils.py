@@ -77,6 +77,7 @@ async def storeInStorageHandler(file: UploadFile = File(...)):
 
         file.file.seek(0)
         
+        file.file.seek(0)
         return url
     
 
