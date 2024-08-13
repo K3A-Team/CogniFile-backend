@@ -36,7 +36,6 @@ class Database:
 
     @staticmethod
     async def store(collection , document , dict):
-
         doc_ref = db.collection(collection).document(document)
         return doc_ref.set(dict)
 
@@ -105,3 +104,19 @@ class Database:
     @staticmethod
     async def deleteFile(fileID):
         return await Database.delete("files", fileID)
+    
+    @staticmethod
+    async def createChatbotSession(sessionId , sessionDict):
+        return await Database.store("chatbotSession",sessionId,sessionDict)
+
+    @staticmethod
+    async def getChatbotSession(sessionId): 
+        return await Database.read("chatbotSession",sessionId)
+        
+    @staticmethod
+    async def editChatbotSession(sessionId , sessionDict):
+        return await Database.edit("chatbotSession",sessionId,sessionDict)
+    
+    @staticmethod
+    async def deleteChatbotSession(sessionId):
+        return await Database.delete("chatbotSession",sessionId)

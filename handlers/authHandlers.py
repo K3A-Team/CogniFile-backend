@@ -5,6 +5,7 @@ from Middlewares.authProtectionMiddlewares import *
 from Core.Shared.Security import *
 import uuid
 from Models.Entities.User import User
+from Models.Entities.ChatBotSession import ChatBotSession
 from handlers.storageHandlers.foldersHandlers import createFolderHandler
 
 async def registerUserHandler(firstname : str, lastname : str, email : str, password : str):
@@ -37,13 +38,20 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
 
     rootFolderId = rootFolder["id"]
     
+    chatbotSession = ChatBotSession() 
+    
+    chatbotSessionDict = chatbotSession.to_dict()
+    
+    await chatbotSession.store()
+    
     user = User(
         id=userId,
         firstName=firstname, 
         lastName=lastname, 
         email=email, 
         password=hashPassword(password),
-        rootFolderId=rootFolderId
+        rootFolderId=rootFolderId,
+        chatbotSessionId=chatbotSessionDict["id"]
         )
 
     userDict = user.to_dict()

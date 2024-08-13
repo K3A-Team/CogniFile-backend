@@ -8,7 +8,6 @@ from Routers.chatbotRouter import chatbotRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 
-
 # Initialize the FastAPI app
 app = FastAPI()
 
