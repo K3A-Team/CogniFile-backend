@@ -16,3 +16,7 @@ TEMP_FILES
 
 ## Virtual Environment
 venv
+
+## Test Files
+test.py
+./test.py
