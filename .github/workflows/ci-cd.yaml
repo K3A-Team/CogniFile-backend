@@ -41,7 +41,7 @@ jobs:
 
     steps:
     - name: Set up SSH
-      uses: ssh-agent-action@v0.5.3
+      uses: webfactory/ssh-agent@v0.5.3
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
@@ -52,7 +52,7 @@ jobs:
 
     - name: Deploy to VPS
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_IP }}
+        ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }}
         cd /opt/CogniFile-backend &&
         git pull origin main &&
         docker pull k3ateam/k3a-backend:1.0 &&
