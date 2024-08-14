@@ -40,11 +40,11 @@ jobs:
     needs: build-and-push
 
     steps:
-    - name: Deploy to VPS using SSH
-      uses: appleboy/ssh-agent
+    - name: Deploy on VPS using SSH
+      uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.VPS_IP }}
-        username: ${{ secrets.VPS_USERNAME }}
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         script: |
