@@ -40,16 +40,15 @@ jobs:
     needs: build-and-push
 
     steps:
-    - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-    - name: Setup environment files
+    - name: install ssh keys
       run: |
-        echo "${{ secrets.ENV_FILE }}" > .env
-        echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
+        install -m 600 -D /dev/null ~/.ssh/id_rsa
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.VPS_IP }} > ~/.ssh/known_hosts
 
     - name: Deploy to VPS
       run: |
         sudo ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }} "cd /opt/CogniFile-backend && git pull origin main && docker pull k3ateam/k3a-backend:1.0 && docker-compose down && docker-compose up -d"
+
+    - name: cleanup
+      run: rm -rf ~/.ssh
