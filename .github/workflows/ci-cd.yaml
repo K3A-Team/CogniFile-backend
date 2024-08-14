@@ -52,9 +52,4 @@ jobs:
 
     - name: Deploy to VPS
       run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }}
-        cd /opt/CogniFile-backend &&
-        git pull origin main &&
-        docker pull k3ateam/k3a-backend:1.0 &&
-        docker-compose down &&
-        docker-compose up -d"
+        sudo ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }} "cd /opt/CogniFile-backend && git pull origin main && docker pull k3ateam/k3a-backend:1.0 && docker-compose down && docker-compose up -d"
