@@ -187,6 +187,23 @@ class Database:
     async def deleteFile(fileID):
         return await Database.delete("files", fileID)
     
+        
+    @staticmethod
+    async def createChatbotSession(sessionId , sessionDict):
+        return await Database.store("chatbotSession",sessionId,sessionDict)
+
+    @staticmethod
+    async def getChatbotSession(sessionId): 
+        return await Database.read("chatbotSession",sessionId)
+        
+    @staticmethod
+    async def editChatbotSession(sessionId , sessionDict):
+        return await Database.edit("chatbotSession",sessionId,sessionDict)
+    
+    @staticmethod
+    async def deleteChatbotSession(sessionId):
+        return await Database.delete("chatbotSession",sessionId)
+    
     @staticmethod
     def get_user_names_map(user_ids: List[str]) -> Dict[str, str]:
         """

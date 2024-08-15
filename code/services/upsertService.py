@@ -1,10 +1,15 @@
 import os
+import tempfile
 from pinecone import Pinecone
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from fastapi import UploadFile
 import PyPDF2
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import io
+from langchain_community.document_loaders.csv_loader import CSVLoader
+import pandas as pd
+from langchain_community.document_loaders.dataframe import DataFrameLoader
+from langchain_community.document_loaders.pdf import PyPDFLoader
 
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
 
@@ -16,22 +21,25 @@ embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_ap
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-async def read_file(file: UploadFile):
-    file_extension = os.path.splitext(file.filename)[1]
-    if file_extension.lower() == '.pdf':
-        return await read_pdf(file)
-    elif file_extension.lower() == '.txt':
-        return await read_txt(file)
-    else:
-        raise ValueError(f"Unsupported file format: {file_extension}")
-
-async def read_pdf(file: UploadFile):
-    content = await file.read()
-    pdf_reader = PyPDF2.PdfReader(io.BytesIO(content))
-    full_text = []
-    for page in pdf_reader.pages:
-        full_text.append(page.extract_text())
-    return '\n'.join(full_text)
+async def read_file(file: UploadFile,url):
+    match os.path.splitext(file.filename)[1].lower():
+        case '.pdf':
+            loader = PyPDFLoader(url)
+            pages = loader.load()
+            for page in pages:
+                text += page.page_content + ' '
+            return text
+        case '.txt':
+            return await read_txt(file)
+        case '.csv': 
+            df = pd.read_csv(file.file)
+            loader = DataFrameLoader(data_frame=df,page_content_column=df.columns[0])
+            rows = loader.load()
+            for row in rows:
+                text += row.metadata + ' '
+            return text 
+        case _ :
+            ValueError(f"Unsupported file format for formating : {file_extension}")
 
 async def read_txt(file: UploadFile):
     content = await file.read()
@@ -57,10 +65,12 @@ def upsert_to_pinecone(chunks, file_name,id_file,userID):
         to_upsert = zip(ids, embeds, metadata)
         _ = index.upsert(vectors=list(to_upsert))
         
-async def process_and_upsert_service(file,id_file,userID):
+async def process_and_upsert_service(file,id_file,userID,url):
 
-    text = await read_file(file)
-        
+    text = await read_file(file,url)
+    
+    print('the extracted text : ',text)
+    
     chunks = split_text(text)
 
     upsert_to_pinecone(chunks, file.filename,id_file,userID)

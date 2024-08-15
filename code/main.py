@@ -4,8 +4,8 @@ from Routers.storageRouter import storageRouter
 from Routers.userRouter import userRouter
 from Routers.searchRouter import searchRouter
 from Routers.fileHierarchyRouter import fileHierarchyRouter
+from Routers.chatbotRouter import chatbotRouter
 from fastapi.middleware.cors import CORSMiddleware
-
 
 
 # Initialize the FastAPI app
@@ -33,8 +33,9 @@ app.include_router(userRouter, tags=["user"], prefix="/user")
 
 app.include_router(searchRouter,tags=["search"], prefix="/search" )
 
-app.include_router(fileHierarchyRouter,tags=["hierarchy"], prefix="/hierarchy" )
+app.include_router(fileHierarchyRouter,tags=["hierarchy"], prefix="/hierarchy")
 
+app.include_router(chatbotRouter,tags=["chatbot"], prefix="/chatbot")
 
 # Start the server with the following command:
 # uvicorn main:app --reload
