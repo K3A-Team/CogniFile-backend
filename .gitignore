@@ -8,9 +8,6 @@ server-env
 .env
 /env
 
-## Firebase Configuration
-firebase.json
-
 ## Temporary Files
 TEMP_FILES
 

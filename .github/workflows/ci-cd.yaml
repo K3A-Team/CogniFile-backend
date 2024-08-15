@@ -25,20 +25,12 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Setup environment files
-      run: |
-        sudo echo "${{ secrets.ENV_FILE }}" > .env
-        sudo echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
-
-    - name: List files
-      run: ls -la
-
-    - name: Assure content of env
-      run: sudo cat firebase.json
-
-    - name: Build and push Docker image
+    - name: Build Docker image
       run: |
         docker build -t k3ateam/k3a-backend:1.0 .
+
+    - name: Push Docker image
+      run: |
         docker push k3ateam/k3a-backend:1.0
 
   deploy:
@@ -58,7 +50,6 @@ jobs:
           
           # Set up environment files
           sudo echo "${{ secrets.ENV_FILE }}" > .env
-          sudo echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
           
           # Deploy the application
           sudo git pull origin main
