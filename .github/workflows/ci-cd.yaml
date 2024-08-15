@@ -50,11 +50,6 @@ jobs:
         script: |
           cd /opt/CogniFile-backend
           
-          sudo git config --global --add safe.directory /opt/CogniFile-backend
-
-          echo "Current user on remote VPS:"
-          whoami
-
           # Set up environment files
           sudo echo "${{ secrets.ENV_FILE }}" > .env
           sudo echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
