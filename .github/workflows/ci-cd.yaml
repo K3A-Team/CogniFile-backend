@@ -48,9 +48,9 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         port: 22
         script: |
-          sudo git config --global --add safe.directory /opt/CogniFile-backend
-
           cd /opt/CogniFile-backend
+          
+          sudo git config --global --add safe.directory /opt/CogniFile-backend
 
           # Set up environment files
           echo "${{ secrets.ENV_FILE }}" | sudo tee .env > /dev/null
