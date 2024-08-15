@@ -53,8 +53,6 @@ jobs:
           # Set up environment files
           sudo echo "${{ secrets.ENV_FILE }}" > .env
 
-          sudo ls -la
-          
           # Deploy the application
           sudo git pull origin main
           docker pull k3ateam/k3a-backend:1.0
