@@ -52,8 +52,8 @@ jobs:
           
           # Set up environment files
           sudo echo "${{ secrets.ENV_FILE }}" > .env
-          
-          ls -la
+
+          sudo ls -la
           
           # Deploy the application
           sudo git pull origin main
