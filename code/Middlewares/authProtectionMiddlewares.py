@@ -1,6 +1,6 @@
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from fastapi import status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 from dotenv import load_dotenv
 import os
@@ -9,7 +9,7 @@ load_dotenv()
 HASH_ALGORITHM = os.getenv("HASH_ALGORITHM")
 HASHING_SECRET_KEY = os.getenv("HASHING_SECRET_KEY")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+http_bearer_scheme = HTTPBearer()
 
 credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -19,8 +19,9 @@ credentials_exception = HTTPException(
             "message": f"Could not validate credentials"},
     )
 
-def LoginProtected(token: str = Depends(oauth2_scheme)):
+def LoginProtected(credentials: HTTPAuthorizationCredentials = Depends(http_bearer_scheme)):
     try:
+        token = credentials.credentials
         payload = jwt.decode(token, HASHING_SECRET_KEY, algorithms=[HASH_ALGORITHM])
         id: str = payload.get("id")
         if id == None:
