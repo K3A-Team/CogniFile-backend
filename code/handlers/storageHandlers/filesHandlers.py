@@ -111,6 +111,9 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     await Database.edit("folders", folderId, parentFolder)
 
     fileDict = await Database.createFile(fileObj)
+    print('problem with upserting')
+    await process_and_upsert_service(file,fileObj.id,userID,url)
+    
     return fileDict
 
 async def getFileHandler(userID:str, fileID: str):
