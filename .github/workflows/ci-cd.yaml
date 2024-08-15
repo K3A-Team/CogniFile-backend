@@ -50,11 +50,14 @@ jobs:
         script: |
           cd /opt/CogniFile-backend
           
-          git config --global --add safe.directory /opt/CogniFile-backend
+          sudo git config --global --add safe.directory /opt/CogniFile-backend
+
+          echo "Current user on remote VPS:"
+          whoami
 
           # Set up environment files
-          echo "${{ secrets.ENV_FILE }}" > .env
-          echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
+          sudo echo "${{ secrets.ENV_FILE }}" > .env
+          sudo echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
           
           # Deploy the application
           git pull origin main
