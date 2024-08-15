@@ -30,6 +30,12 @@ jobs:
         sudo echo "${{ secrets.ENV_FILE }}" > .env
         sudo echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
 
+    - name: List files
+      run: ls -la
+
+    - name: Assure content of env
+      run: sudo cat firebase.json
+
     - name: Build and push Docker image
       run: |
         docker build -t k3ateam/k3a-backend:1.0 .
