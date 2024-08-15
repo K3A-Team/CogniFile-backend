@@ -49,6 +49,8 @@ jobs:
         script: |
           cd /opt/CogniFile-backend
           
+          ls -la
+          
           # Set up environment files
           sudo echo "${{ secrets.ENV_FILE }}" > .env
           
