@@ -1,16 +1,16 @@
 #!/bin/bash
 
-if docker-compose -f docker-compose.prod.yaml ps | grep "Up"; then
+if docker-compose ps | grep "Up"; then
     echo "Services are already running. Stopping them..."
-    docker-compose -f docker-compose.prod.yaml down
+    docker-compose down
 else
     echo "No services are running. Continuing..."
 fi
 
 echo "Starting services..."
-docker-compose -f docker-compose.prod.yaml up -d
+docker-compose up --build -d
 
-if docker-compose -f docker-compose.prod.yaml ps | grep "Up"; then
+if docker-compose ps | grep "Up"; then
     echo "Services started successfully."
 else
     echo "Failed to start services."
