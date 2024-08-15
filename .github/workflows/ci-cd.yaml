@@ -49,6 +49,12 @@ jobs:
         port: 22
         script: |
           cd /opt/CogniFile-backend
+
+          # Set up environment files
+          echo "${{ secrets.ENV_FILE }}" > .env
+          echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
+          
+          # Deploy the application
           git pull origin main
           docker pull k3ateam/k3a-backend:1.0
           docker-compose down
