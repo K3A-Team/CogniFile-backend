@@ -50,11 +50,11 @@ jobs:
         script: |
           cd /opt/CogniFile-backend
           
-          sudo git config --global --add safe.directory /opt/CogniFile-backend
+          git config --global --add safe.directory /opt/CogniFile-backend
 
           # Set up environment files
-          echo "${{ secrets.ENV_FILE }}" | sudo tee .env > /dev/null
-          echo "${{ secrets.FIREBASE_CONFIG }}" | sudo tee firebase.json > /dev/null
+          echo "${{ secrets.ENV_FILE }}" > .env
+          echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
           
           # Deploy the application
           git pull origin main
