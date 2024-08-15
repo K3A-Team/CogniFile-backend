@@ -51,8 +51,8 @@ jobs:
           cd /opt/CogniFile-backend
 
           # Set up environment files
-          echo "${{ secrets.ENV_FILE }}" > .env
-          echo "${{ secrets.FIREBASE_CONFIG }}" > firebase.json
+          echo "${{ secrets.ENV_FILE }}" | sudo tee .env > /dev/null
+          echo "${{ secrets.FIREBASE_CONFIG }}" | sudo tee firebase.json > /dev/null
           
           # Deploy the application
           git pull origin main
