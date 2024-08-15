@@ -27,6 +27,7 @@ jobs:
 
     - name: Build Docker image
       run: |
+        cd ./code
         docker build -t k3ateam/k3a-backend:1.0 .
 
     - name: Push Docker image
@@ -54,4 +55,6 @@ jobs:
           # Deploy the application
           sudo git pull origin main
           docker pull k3ateam/k3a-backend:1.0
+
+          cd ./deployment/prod
           sh ./prod.sh
