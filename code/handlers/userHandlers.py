@@ -1,8 +1,8 @@
-from Routers.storageRouter import storageRouter
 from Core.Shared.ErrorResponses import *
-from Core.Shared.Database import Database , db
+from Core.Shared.Database import Database
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
+from services.calcSizeService import get_bytes_from_readable_size, get_readable_file_size
 
 async def getProfileHandler(userID: str):
     """
@@ -51,3 +51,43 @@ async def editProfileHandler(data : dict,userID: str):
         return badRequestError("No data to update")
     await Database.edit("users", userID, user)
     return user
+
+async def updateNewTrial(userID: str, trial: str):
+    """
+    Updates the user's trial status to the provided trial type.
+
+    Args:
+        userID (str): The ID of the user whose trial is being updated.
+        trial (str): The new trial type to be assigned.
+
+    Returns:
+        dict: The updated user's data.
+
+    Raises:
+        Exception: If the trial type is invalid.
+    """
+    if trial not in ["basic", "standard", "premium"]:
+        return badRequestError("Invalid trial type")
+    await Database.edit("users", userID, {"trial": trial})
+    return await Database.read("users", userID)
+
+async def updateUsedSpace(userID: str, file_size: int):
+    """
+    Updates the user's used space to the provided value.
+
+    Args:
+        userID (str): The ID of the user whose used space is being updated.
+        usedSpace (str): The new used space value.
+
+    Returns:
+        dict: The updated user's data.
+
+    Raises:
+        Exception: If the used space value is invalid.
+    """
+    userDetail = await Database.getUser(userID, ["usedSpace"])
+    user_used_space = (userDetail["usedSpace"])
+
+    usedSpace = get_bytes_from_readable_size(user_used_space) + file_size
+    await Database.edit("users", userID, {"usedSpace": get_readable_file_size(usedSpace)})
+    return await Database.read("users", userID)

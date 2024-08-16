@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Header
+from fastapi import FastAPI
 from Routers.authRouter import authRouter
 from Routers.storageRouter import storageRouter
 from Routers.userRouter import userRouter

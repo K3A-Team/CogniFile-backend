@@ -8,7 +8,9 @@ from Core.Shared.ErrorResponses import *
 from fastapi import UploadFile
 from fastapi import File
 from Models.Entities.StorageFile import StorageFile
-from services.hashService import generate_file_hash, get_readable_file_size, is_file_duplicate
+from handlers.userHandlers import updateUsedSpace
+from services.hashService import generate_file_hash, is_file_duplicate
+from services.calcSizeService import get_readable_file_size
 from services.maliciousDetectionService import is_file_malicious
 from services.upsertService import process_and_upsert_service
 
@@ -91,8 +93,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     readId = parentFolder["readId"]
     writeId = parentFolder["writeId"]
     
-    readable_file_size = get_readable_file_size(len(file_content))
-
+    file_size = len(file_content)
     fileObj = StorageFile(
         name=name,
         ownerId=userID,
@@ -100,7 +101,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         readId=readId,
         writeId=writeId,
         url=url,
-        size=readable_file_size,
+        size=get_readable_file_size(file_size),
         tags=tags,
     )
 
@@ -109,9 +110,9 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     #update parent folder
     parentFolder["files"].append(fileObj.id)
     await Database.edit("folders", folderId, parentFolder)
+    await updateUsedSpace(userID, file_size)
 
     fileDict = await Database.createFile(fileObj)
-    print('problem with upserting')
     await process_and_upsert_service(file,fileObj.id,userID,url)
     
     return fileDict
