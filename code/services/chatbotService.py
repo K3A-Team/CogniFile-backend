@@ -7,8 +7,7 @@ from langchain_pinecone import PineconeVectorStore
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain_pinecone import PineconeVectorStore
-from langchain_core.messages.base import BaseMessage
-from langchain_core.chat_history import BaseChatMessageHistory,InMemoryChatMessageHistory
+from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.messages import AIMessage,HumanMessage
 from Core.Shared.Database import Database
 from Models.Entities.ChatBotSession import ChatBotSession

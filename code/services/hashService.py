@@ -1,5 +1,4 @@
 import hashlib
-import re
 from fastapi import HTTPException
 from Core.Shared.Database import Database
 

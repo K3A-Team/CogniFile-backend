@@ -1,8 +1,7 @@
 from typing import Dict, List
 import firebase_admin
-from firebase_admin import credentials,auth
+from firebase_admin import credentials
 from firebase_admin import firestore
-import json
 import os
 from dotenv import load_dotenv
 load_dotenv()

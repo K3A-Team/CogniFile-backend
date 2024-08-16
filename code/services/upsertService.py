@@ -1,12 +1,8 @@
 import os
-import tempfile
 from pinecone import Pinecone
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from fastapi import UploadFile
-import PyPDF2
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-import io
-from langchain_community.document_loaders.csv_loader import CSVLoader
 import pandas as pd
 from langchain_community.document_loaders.dataframe import DataFrameLoader
 from langchain_community.document_loaders.pdf import PyPDFLoader

@@ -7,7 +7,6 @@ import uuid
 from Models.Entities.Folder import Folder
 from collections import defaultdict
 from Core.Shared.Database import db
-from firebase_admin import firestore
 
 
 TEXT_PROMPT = '''
