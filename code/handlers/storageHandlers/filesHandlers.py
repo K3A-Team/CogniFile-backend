@@ -104,7 +104,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         tags=tags,
     )
 
-    await process_and_upsert_service(file,fileObj.id,userID)
+    await process_and_upsert_service(file,fileObj.id,userID,fileObj.url)
 
     #update parent folder
     parentFolder["files"].append(fileObj.id)
