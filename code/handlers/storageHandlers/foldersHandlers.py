@@ -1,4 +1,4 @@
-from Core.Shared.Database import Database
+from Core.Shared.Database import Database , db
 from Core.Shared.Storage import *
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
@@ -39,7 +39,7 @@ async def createFolderHandler(userID:str, folderName: str , parentFolderID: str 
     folderDict = await Database.createFolder(folder)
     return folderDict
 
-async def getFolderHandler(userID: str, folderID: str, search: str):
+async def getFolderHandler(userID: str, folderID: str):
     """
     Retrieves a folder's data if the user has access permissions and filters based on the search term.
 
@@ -54,16 +54,14 @@ async def getFolderHandler(userID: str, folderID: str, search: str):
     Raises:
         Exception: If the user does not have read or write permissions for the folder.
     """
-    folder = await Database.getFolder(folderID)
+    folder = await Database.getFodlerFormatted(folderID)
+
     if ((userID != folder["ownerId"]) and (userID not in folder["readId"]) and (userID not in folder["writeId"])):
         raise Exception("You are not allowed to access this directory")
-    
-    if search:
-        matching_content = await searchContentInFolderRecursive(folderID, search, userID)
-        folder["files"] = matching_content["files"]
-        folder["subFolders"] = matching_content["subFolders"]
-        folder["readId"] = matching_content["readId"]
-        folder["writeId"] = matching_content["writeId"]
+
+    # get data about the subfolders and files 
+
+
     
     return folder
 

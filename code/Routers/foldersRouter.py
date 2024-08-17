@@ -36,13 +36,13 @@ async def createSubFodler(
         return {"success": False, "message": str(e)}
 
 @foldersRouter.get("/{folderId}", status_code=status.HTTP_200_OK)
-async def getFolder(folderId : str, search: str = None, userID: str = Depends(LoginProtected)):
+async def getFolder(folderId : str, userID: str = Depends(LoginProtected)):
     """
     Retrieves the details of the specified folder; the logic is handled inside the handler.
     """
     try:
 
-        folderDict = await getFolderHandler(userID=userID, folderID=folderId, search=search)
+        folderDict = await getFolderHandler(userID=userID, folderID=folderId)
 
         return {"success": True, "folder": folderDict}
 

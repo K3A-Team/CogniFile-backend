@@ -106,6 +106,53 @@ class Database:
         return await Database.read("folders", folderID, attributes)
     
     @staticmethod
+    async def getFodlerFormatted(folderId):
+        folder_ref = db.collection('folders').document(folderId)
+        folder = folder_ref.get().to_dict()
+
+
+        file_ids = folder.get('files', [])
+        files = []
+        if file_ids:
+            file_refs = db.collection('files').where("id", 'in', file_ids).stream()
+            files = [file.to_dict() for file in file_refs]
+
+            files = [
+                {
+                    'name': file.get('name'),
+                    'size': file.get('size'),
+                    'url': file.get('url')
+                }
+                for file in files
+            ]
+
+
+        sub_folder_ids = folder.get('subFolders', [])
+        sub_folders = []
+        if sub_folder_ids:
+            sub_folder_refs = db.collection('folders').where("id", 'in', sub_folder_ids).stream()
+            sub_folders = [sub_folder.to_dict() for sub_folder in sub_folder_refs]
+        
+            sub_folders = [
+                {
+                    'name': subfolder.get('name'),
+                    'children': len(subfolder.get('subFolders')),
+                    'id': subfolder.get('id')
+                }
+                for subfolder in sub_folders
+            ]
+ 
+        folder["files"] = files
+        folder["subFolders"] = sub_folders
+
+        return folder
+
+
+
+
+        
+    
+    @staticmethod
     async def getUser(userID, attributes=None):
         return await Database.read("users", userID, attributes)
     
