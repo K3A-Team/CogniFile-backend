@@ -88,3 +88,4 @@ langchain
 langchain-community
 pypdf
 langchain_openai
+slowapi

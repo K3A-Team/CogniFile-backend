@@ -9,6 +9,9 @@ load_dotenv()
 HASH_ALGORITHM = os.getenv("HASH_ALGORITHM")
 HASHING_SECRET_KEY = os.getenv("HASHING_SECRET_KEY")
 
+SSRF_SECRET_KEY = os.getenv("SSRF_SECRET_KEY")
+SSRF_SECRET_SPLITER = os.getenv("SSRF_SECRET_SPLITER")
+
 http_bearer_scheme = HTTPBearer()
 
 credentials_exception = HTTPException(
@@ -21,13 +24,18 @@ credentials_exception = HTTPException(
 
 def LoginProtected(credentials: HTTPAuthorizationCredentials = Depends(http_bearer_scheme)):
     try:
-        token = credentials.credentials
-        payload = jwt.decode(token, HASHING_SECRET_KEY, algorithms=[HASH_ALGORITHM])
-        id: str = payload.get("id")
-        if id == None:
+        creds = credentials.credentials
+        splitter = creds.split(SSRF_SECRET_SPLITER)[1]
+
+        if (splitter == SSRF_SECRET_KEY):
+            token = creds.split(SSRF_SECRET_SPLITER)[0]
+            payload = jwt.decode(token, HASHING_SECRET_KEY, algorithms=[HASH_ALGORITHM])
+            id: str = payload.get("id")
+            if id == None:
+                raise credentials_exception
+            return id
+        else:
             raise credentials_exception
-        # Else , continue. (Don't raise any exception)
-        return id
     except HTTPException as e:
         raise e
     except Exception:

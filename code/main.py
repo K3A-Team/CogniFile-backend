@@ -6,10 +6,18 @@ from Routers.searchRouter import searchRouter
 from Routers.fileHierarchyRouter import fileHierarchyRouter
 from Routers.chatbotRouter import chatbotRouter
 from fastapi.middleware.cors import CORSMiddleware
-
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.middleware import SlowAPIMiddleware
+from Middlewares.rateLimitMiddlewares import limiter
 
 # Initialize the FastAPI app
 app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Apply the SlowAPI middleware globally
+app.add_middleware(SlowAPIMiddleware)
 
 # CORS middleware to allow requests from all origins
 origins = ["*"]
@@ -20,7 +28,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # Include the authentication router with the prefix "/auth" and tag "auth"
 app.include_router(authRouter, tags=["auth"], prefix="/auth")
