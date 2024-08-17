@@ -22,9 +22,9 @@ async def performFileHierarchySuggestion(request: FolderHierarchy,userID: str = 
     
 @fileHierarchyRouter.get("/file_hierarchy_suggestion/{transactionId}")
 async def confirmFileHierarchySuggestion(transactionId: str , userID: str = Depends(LoginProtected)):
-    #try:
+    try:
         result =  await confirm_hierarchy_suggestions(transactionId , userID)
         return {"success": True, "result": result}
 
-    #except Exception as e:
-    #    return {"success": False, "message": str(e)}
+    except Exception as e:
+        return {"success": False, "message": str(e)}

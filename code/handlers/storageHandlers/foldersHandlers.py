@@ -1,4 +1,4 @@
-from Core.Shared.Database import Database
+from Core.Shared.Database import Database , db
 from Core.Shared.Storage import *
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
@@ -64,6 +64,11 @@ async def getFolderHandler(userID: str, folderID: str, search: str):
         folder["subFolders"] = matching_content["subFolders"]
         folder["readId"] = matching_content["readId"]
         folder["writeId"] = matching_content["writeId"]
+
+    # get data about the subfolders and files 
+    print("OK ok")
+
+
     
     return folder
 
