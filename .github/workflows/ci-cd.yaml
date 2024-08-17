@@ -49,17 +49,12 @@ jobs:
         script: |
           cd /opt/CogniFile-backend
           
-          
-          # Set up environment files
           sudo echo "${{ secrets.ENV_FILE }}" > .env
 
-          # Deploy the application
           sudo git pull origin main
           docker pull k3ateam/k3a-backend:1.0
 
           cd ./deployment/prod
-          
-          sh ./generate_ssl.sh api.cognifile.org ${{ secrets.SSL_EMAIL }}
           sh ./prod.sh
 
           echo "y" | sudo docker image prune --all --force
