@@ -1,4 +1,5 @@
 from services.searchService import search_service
+from services.searchService import query_search_service
 
 async def nlp_search_handler(query,userID):
     result = search_service(query,userID)
