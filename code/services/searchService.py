@@ -56,7 +56,7 @@ content_index = pc.Index(CONTENT_INDEX_NAME)
 names_index = pc.Index(NAMES_INDEX_NAME)
 
 # Gemini
-gemini_model = ChatGoogleGenerativeAI(model="gemini-1.5-pro",temperature=MODEL_TEMP,google_api_key=os.getenv("GEMINI_API_KEY"))
+gemini_model = ChatGoogleGenerativeAI(model="gemini-1.5-flash",temperature=MODEL_TEMP,google_api_key=os.getenv("GEMINI_API_KEY"))
 
 # OPENAI and GOOGLE-GEN-AI Embedings
 gemini_embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key=os.getenv("GEMINI_API_KEY"))

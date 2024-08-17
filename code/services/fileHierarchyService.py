@@ -33,7 +33,7 @@ Provide only the JSON and no need for an explanation
 PROMPT_TEMPLATE = ChatPromptTemplate.from_template(TEXT_PROMPT)
 
 MODEL_TEMP = 0.0
-MODEL = ChatGoogleGenerativeAI(model="gemini-1.5-pro",temperature=MODEL_TEMP,google_api_key=os.getenv("GEMINI_API_KEY"))
+MODEL = ChatGoogleGenerativeAI(model="gemini-1.5-flash",temperature=MODEL_TEMP,google_api_key=os.getenv("GEMINI_API_KEY"))
 
 def get_folder_hierarchy(folder_id, displayFileId = False):
     folder_ref = db.collection('folders').document(folder_id)
