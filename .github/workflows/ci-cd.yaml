@@ -46,7 +46,7 @@ jobs:
         script: |
           cd /opt/CogniFile-backend
           
-          sudo echo "${{ secrets.ENV_FILE }}" > .env
+          echo "${{ secrets.ENV_FILE_B64 }}" | base64 -d | sudo tee .env > /dev/null
 
           sudo git pull origin main
           docker pull k3ateam/k3a-backend:1.0
