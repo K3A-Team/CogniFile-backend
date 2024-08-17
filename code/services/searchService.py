@@ -1,9 +1,7 @@
 import os
-from Core.Shared.Database import db
 from fastapi import HTTPException
 from Core.Shared.Database import Database
 from google.cloud.firestore_v1.base_query import FieldFilter
-import google.generativeai as genai
 from pinecone import Pinecone
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai import GoogleGenerativeAIEmbeddings

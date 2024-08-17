@@ -17,3 +17,6 @@ venv
 ## Test Files
 test.py
 ./test.py
+
+## SSL Certificates
+ssl/*
