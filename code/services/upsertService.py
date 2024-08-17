@@ -6,14 +6,18 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import pandas as pd
 from langchain_community.document_loaders.dataframe import DataFrameLoader
 from langchain_community.document_loaders.pdf import PyPDFLoader
+from langchain_openai import OpenAIEmbeddings
 
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
 
-index_name = "testing-index"
+CONETNT_INDEX_NAME = "testing-index"
+NAMES_INDEX_NAME = "file-names-index"
 
-index = pc.Index(index_name)
+conetnt_index = pc.Index(CONETNT_INDEX_NAME)
+names_index = pc.Index(NAMES_INDEX_NAME)
 
-embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key=os.getenv("GEMINI_API_KEY"))
+gemini_embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key=os.getenv("GEMINI_API_KEY"))
+openAi_embedings = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"),model="text-embedding-3-large")
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -39,7 +43,6 @@ async def read_file(file: UploadFile,url):
 
 async def read_txt(file: UploadFile):
     content = await file.read()
-    print(content)
     return content.decode('utf-8')
     
 def split_text(text):
@@ -51,24 +54,37 @@ def split_text(text):
     chunks = text_splitter.split_text(text)
     return chunks
 
-def upsert_to_pinecone(chunks, file_name,id_file,userID):
+def upsert_content_to_pinecone(chunks, file_name,id_file,userID):
     batch_size = 100
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i:i+batch_size]
         ids = [f"{file_name}_{j}" for j in range(i, i+len(batch))]
-        embeds = embeddings.embed_documents(batch)
+        embeds = gemini_embeddings.embed_documents(batch)
         metadata = [{"text": chunk, "file_id": id_file, "user_id": userID} for chunk in batch]
         to_upsert = zip(ids, embeds, metadata)
-        _ = index.upsert(vectors=list(to_upsert))
+        _ = conetnt_index.upsert(vectors=list(to_upsert))
         
-async def process_and_upsert_service(file,id_file,userID,url):
-
+def upsert_name_to_pinecone(file_name : str,file_id : str,userID : str):
+    # meatadata 
+    metadata = {"file_name": file_name, "file_id": file_id, "user_id": userID}
+    # embedings 
+    embedding = openAi_embedings.embed_query(file_name)
+    # upserting
+    to_upsert = [{
+        'id' : file_id,
+        'values' : embedding,
+        'metadata' : metadata 
+    }]
+    _ = names_index.upsert(vectors=list(to_upsert))
+        
+async def process_and_upsert_service(file,name,id_file,userID,url):
+    # Upserting the file's name 
+    upsert_name_to_pinecone(name,id_file,userID)
+    
     text = await read_file(file,url)
-    
-    print('the extracted text : ',text)
-    
+        
     chunks = split_text(text)
 
-    upsert_to_pinecone(chunks, file.filename,id_file,userID)
+    upsert_content_to_pinecone(chunks, file.filename,id_file,userID)
     
     file.file.seek(0)

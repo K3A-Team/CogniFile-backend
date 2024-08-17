@@ -5,54 +5,108 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 from pinecone import Pinecone
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
+from langchain.prompts import ChatPromptTemplate
+from langchain_openai import OpenAIEmbeddings
 
-MODEL_TEMP = 0.7
+# Search and model params
+MODEL_TEMP = 0.0
 NUM_SEARCH_RESULTS = 5
 
-pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+# Prompt for query type classificatiopn "NLP search" or "File name"
+QUERY_CLASSIFICATION_PROMPT_TEXT = '''Given the following user input query: {query}
+Classify the query as one of the following types:
 
-index_name = "testing-index"
+1 - File Name
+2 - Natural Language Search
 
-index = pc.Index(index_name)
+Guidelines:
 
-model = ChatGoogleGenerativeAI(model="gemini-1.5-pro",temperature=MODEL_TEMP,google_api_key=os.getenv("GEMINI_API_KEY"))
+A "File Name" typically:
+Contains a file extension (e.g., .txt, .pdf, .docx)
+Uses underscores, hyphens, or camel case (e.g., my_document.txt, important-file.pdf, projectReport.docx)
+Does not use complete sentences or question structures
 
-embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key=os.getenv("GEMINI_API_KEY"))
+A "Natural Language Search" typically:
+Uses complete sentences or phrases
+May include words like "find", "search", "locate", "containing", etc.
+Describes the content or context of the file rather than its exact name
+Often starts with phrases like "the file that has..." or "document about..."
 
-prompt = [
+Respond with only the number 1 or 2, corresponding to the most likely classification.
+'''
+QUERY_CLASSIFICATION_PROMPT_TEMPLATE = ChatPromptTemplate.from_template(QUERY_CLASSIFICATION_PROMPT_TEXT)
+
+# Prompt for extracting keywords from the user's query
+KEYWORD_EXTRACTION_PROMPT_TEXT = [
     (
         "system",
         "You are a helpful assistant that extractes the keywords that help identifie a document on a file management and staorage system from a user's query on a  and return them in a signle string ,return only ones that are mentioned in the query don't augment them",
     ),
     ("human", "place holder")
 ]
+
+# Connection with vector Database
+pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+CONTENT_INDEX_NAME = "testing-index"
+NAMES_INDEX_NAME = "file-names-index"
+content_index = pc.Index(CONTENT_INDEX_NAME)
+names_index = pc.Index(NAMES_INDEX_NAME)
+
+# Gemini
+gemini_model = ChatGoogleGenerativeAI(model="gemini-1.5-flash",temperature=MODEL_TEMP,google_api_key=os.getenv("GEMINI_API_KEY"))
+
+# OPENAI and GOOGLE-GEN-AI Embedings
+gemini_embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key=os.getenv("GEMINI_API_KEY"))
+openAi_embedings = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"),model="text-embedding-3-large")
+
+
+# Helper function to extract the unique file's ids from the vector DB results
 def extract_unique_file_ids(data):
-    file_ids = set()
+    file_ids = []
     for match in data['matches']:
         if 'file_id' in match['metadata']:
-            file_ids.add(match['metadata']['file_id'])
+            if match['metadata']['file_id'] not in file_ids :
+                file_ids.append(match['metadata']['file_id'])
     return list(file_ids)
 
-def nlp_search_service(query,userID):
-
-    prompt[1] = ("human", query)
-    
-    infos_extraction_response = model.invoke(prompt)
-        
+def nlp_search_service(query : str,userID : str):
+    KEYWORD_EXTRACTION_PROMPT_TEXT[1] = ("human", query)
+    infos_extraction_response = gemini_model.invoke(KEYWORD_EXTRACTION_PROMPT_TEXT)
     relevant_infos = infos_extraction_response.content
-    
-    embeded_query = embeddings.embed_query(relevant_infos)
-    
-    vectors = index.query(
-                vector=embeded_query,
-                top_k=NUM_SEARCH_RESULTS,
-                filter={
-                    "user_id": userID
-                },
-                include_metadata=True            
-            )
-    print(vectors)
+    embeded_query = gemini_embeddings.embed_query(relevant_infos)
+    vectors = content_index.query(
+        vector=embeded_query,
+        top_k=NUM_SEARCH_RESULTS,
+        filter={
+            "user_id": userID
+        },
+        include_metadata=True            
+    )
     return  extract_unique_file_ids(vectors)
+
+def name_search_service(query,userID):
+    embeded_query = openAi_embedings.embed_query(query)
+    vectors = names_index.query(
+        vector=embeded_query,
+        top_k=NUM_SEARCH_RESULTS,
+        filter={
+            "user_id": userID
+        },
+        include_metadata=True            
+    )
+    return  extract_unique_file_ids(vectors)
+
+def search_service(query : str,userID : str):
+    llm_prompt = QUERY_CLASSIFICATION_PROMPT_TEMPLATE.format_messages(
+        query = query
+    )
+    classification_result = gemini_model.invoke(llm_prompt)
+    
+    if '1' in classification_result.content:
+        return name_search_service(query=query,userID=userID)
+    else :
+        return nlp_search_service(query=query,userID=userID)
 
 #--------------------------------------------
 

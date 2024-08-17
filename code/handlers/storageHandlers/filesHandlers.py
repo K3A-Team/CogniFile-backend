@@ -49,6 +49,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     await file.seek(0)
     
     name, ext = os.path.splitext(file.filename)
+    saved_name = name
     
     duplicate_check = await is_file_duplicate(file_hash, folderId)
     if duplicate_check["is_duplicate"]:
@@ -74,7 +75,6 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
             tags.append("duplicate")
     else:
         name = f"{name}{ext}"
-
     if (await is_file_malicious(file_content)):
         tags.append("malicious")
 
@@ -105,13 +105,13 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         tags=tags,
     )
 
-    #update parent folder
+
     parentFolder["files"].append(fileObj.id)
     await Database.edit("folders", folderId, parentFolder)
     await updateUsedSpace(userID, file_size)
 
     fileDict = await Database.createFile(fileObj)
-    await process_and_upsert_service(file,fileObj.id,userID,url)
+    await process_and_upsert_service(file,saved_name,fileObj.id,userID,url)
     
     return fileDict
 
