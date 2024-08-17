@@ -18,5 +18,5 @@ venv
 test.py
 ./test.py
 
-## SSL Certificates
-ssl/*
+## SSL Certificates and stuff
+data
