@@ -49,7 +49,6 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     await file.seek(0)
     
     name, ext = os.path.splitext(file.filename)
-    saved_name = name
     
     duplicate_check = await is_file_duplicate(file_hash, folderId)
     if duplicate_check["is_duplicate"]:
@@ -111,7 +110,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     await updateUsedSpace(userID, file_size)
 
     fileDict = await Database.createFile(fileObj)
-    await process_and_upsert_service(file,saved_name,fileObj.id,userID,url)
+    await process_and_upsert_service(file=file,name=name,file_id=fileObj.id,url=url,userID=userID)
     
     return fileDict
 
