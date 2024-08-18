@@ -164,4 +164,4 @@ class Folder:
             'subFolders': firestore.ArrayUnion([subfolder.id])
         })
         
-        return subfolder.id
+        return subfolder
