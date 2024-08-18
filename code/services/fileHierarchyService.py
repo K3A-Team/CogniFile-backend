@@ -1,6 +1,6 @@
 from langchain.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
-import os
+import os,ast
 import json
 from typing import Dict, Any
 import uuid
@@ -30,7 +30,9 @@ Here's the current folder structure:
 {current_structure}
 
 Please analyze this structure and provide a new, optimized JSON representation of the folder hierarchy.
-Provide only the JSON and no need for an explanation
+Provide an array containing two elements : 
+1- The optimised JSON representation  
+2- A description for the changes you made
 '''
 
 PROMPT_TEMPLATE = ChatPromptTemplate.from_template(TEXT_PROMPT)
@@ -121,12 +123,12 @@ def optimize_hierarchy(folder_id):
     )
     llm_result = MODEL.invoke(llm_prompt)
     
-    # Hnadeling the JSON (langchain offers some way to structure the JSON so this will likely change)
+    # Hnadling the JSON (langchain offers some way to structure the JSON so this will likely change)
     start = llm_result.content.index('{')
     end = llm_result.content.rindex('}') + 1
     json_str = llm_result.content[start:end]
-    json_str = json_str.replace('```json\n', '').replace('\n```', '')
-    return json.loads(json_str)
+    ai_description= ast.literal_eval((llm_result.content.replace('```json\n', '').replace('\n```', '')))[1]
+    return json.loads(json_str),ai_description
 
 
 
