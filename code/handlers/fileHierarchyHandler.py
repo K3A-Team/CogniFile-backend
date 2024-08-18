@@ -11,7 +11,7 @@ async def file_hierarchy_handler(folder_id, userId):
     if folder["ownerId"] != userId:
         raise Exception("You are not the owner of this folder")
     
-    ai_structure = optimize_hierarchy(folder_id=folder_id)
+    ai_structure,ai_description = optimize_hierarchy(folder_id=folder_id)
     initial_structure = get_folder_hierarchy(folder_id, displayFileId=True)
 
     
@@ -30,14 +30,11 @@ async def file_hierarchy_handler(folder_id, userId):
         "ai_structure": ai_structure,
         "initial_structure": initial_structure,
         "concernedUser": userId,
-        "folderId": folder_id
+        "folderId": folder_id,
+        'ai_explanation' : ai_description
     }
 
     transaction = await Database.store("transactions", transactionId,transObj)
-
-
-
-
     
     return transObj
 
