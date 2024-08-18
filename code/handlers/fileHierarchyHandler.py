@@ -1,4 +1,4 @@
-from services.fileHierarchyService import optimize_hierarchy,get_folder_hierarchy,update_folder_structure
+from services.fileHierarchyService import optimize_hierarchy,get_folder_hierarchy,update_folder_structure_batched
 from Core.Shared.Database import Database
 from Models.Entities.Folder import Folder
 import uuid
@@ -54,8 +54,7 @@ async def confirm_hierarchy_suggestions(transactionId , userId):
     folderId = transactionRecord["folderId"]
     rootFolder = Folder.loadWithId(folderId)
 
-    #transaction = db.transaction()
-    update_folder_structure( rootFolder,ai_structure=ai_structure, initial_structure=initial_structure)
+    update_folder_structure_batched( rootFolder,ai_structure=ai_structure, initial_structure=initial_structure)
 
     await Database.delete("transactions",transactionId)
 
