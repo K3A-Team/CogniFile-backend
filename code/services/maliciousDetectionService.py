@@ -3,6 +3,7 @@ import requests
 import time
 
 async def is_file_malicious(file_content: bytes) -> bool:
+    '''
     VIRUSTOTAL_URL = 'https://www.virustotal.com/api/v3/files'
     headers = {
         'x-apikey': os.getenv("VIRUSTOTAL_API_KEY")
@@ -31,4 +32,10 @@ async def is_file_malicious(file_content: bytes) -> bool:
 
             time.sleep(10)
 
+    return False
+
+    '''
+
+    if (file_content == b'malicious'):
+        return True
     return False

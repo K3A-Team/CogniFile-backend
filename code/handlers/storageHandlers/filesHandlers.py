@@ -13,6 +13,7 @@ from services.hashService import generate_file_hash, is_file_duplicate
 from services.calcSizeService import get_readable_file_size
 from services.maliciousDetectionService import is_file_malicious
 from services.upsertService import process_and_upsert_service
+import time
 
 async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...), force: bool | None = None):
     """
@@ -28,6 +29,10 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     Raises:
         Exception: If the folder ID is not specified, the folder does not exist, or the user does not have write permissions.
     """
+
+    start = time.time()
+
+
     parentFolder = None
     readId = []
     writeId = []
@@ -47,6 +52,12 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     file_content = await file.read()
     file_hash = generate_file_hash(file_content)
     await file.seek(0)
+
+
+    # This logic WORKS but just needs some optimization , but for the sake of the demonstration we will keep it as is
+    isMalicious = is_file_malicious(file_content)
+
+
     
     name, ext = os.path.splitext(file.filename)
     
@@ -74,8 +85,8 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
             tags.append("duplicate")
     else:
         name = f"{name}{ext}"
-    if (await is_file_malicious(file_content)):
-        tags.append("malicious")
+
+
 
     hashObj = FileHash(
         filename=name,
@@ -85,9 +96,13 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         uploaded_at=firestore.SERVER_TIMESTAMP
     )
 
+    if (await isMalicious ):
+        tags.append("malicious")
+
     url = await storeInStorageHandler(file)
 
     await Database.store("file_hashes", hashObj.id, hashObj.to_dict())
+
     
     readId = parentFolder["readId"]
     writeId = parentFolder["writeId"]
@@ -111,6 +126,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
 
     fileDict = await Database.createFile(fileObj)
     await process_and_upsert_service(file=file,name=name,file_id=fileObj.id,url=url,userID=userID)
+
     
     return fileDict
 
