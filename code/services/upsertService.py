@@ -9,7 +9,8 @@ from langchain_community.document_loaders.pdf import PyPDFLoader
 from langchain_openai import OpenAIEmbeddings
 from docx import Document
 
-ROWS_FOR_ONE_CHUNCK= 20
+ROWS_FOR_ONE_CHUNCK = 20
+SUPPORTED_EXTENSIONS = ['.csv','.xlsx','.docx','.pdf','.txt']
 
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
 
@@ -115,7 +116,9 @@ async def process_and_upsert_service(file,name,file_id,url,userID):
     
     # Upserting the file's content
     file_ext = os.path.splitext(file.filename)[1].lower()
-    
+    if (file_ext not in SUPPORTED_EXTENSIONS):
+        # No upserting (for the moment)
+        return
     if(file_ext == '.csv' or file_ext == '.xlsx' ):
         # Upserting rows
         rows,page_content = await read_style_sheet(file)
