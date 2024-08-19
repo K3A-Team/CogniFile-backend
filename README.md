@@ -32,7 +32,8 @@ This repository contains the backend implementation for an advanced file managem
 
 - Clone the repository , install the requirements by using `pip install -r requirements.txt`
 - Initialize a firestore database and storage.
-- Provide a .env file with your credentials and a firebase.json file in the same folder as the main file
+- Move to the `code` folder
+- Provide a .env file with your credentials
 - After this you can directly start the API by using `uvicorn main:app --reload`
 
 ## 🛠️ Technologies Used
