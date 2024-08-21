@@ -42,6 +42,21 @@ conversation_example = {
 }
 
 async def chatbot_service(query,userID):
+  """
+  Handle a chatbot query for a given user.
+
+  This function retrieves the user's chatbot session from the database,
+  reconstructs the conversation history, performs the query using a conversational
+  retrieval chain, updates the conversation history with the new query and response,
+  and stores the updated session back in the database.
+
+  Args:
+      query (str): The user's query to the chatbot.
+      userID (str): The unique identifier of the user.
+
+  Returns:
+      str: The chatbot's response to the user's query.
+  """
   # Feching DataBase for history
   user = await Database.read("users", userID)
   user_chatbot_session_id = user["chatbotSessionId"]
@@ -82,6 +97,18 @@ async def chatbot_service(query,userID):
   return result['answer']
 
 async def clear_chat_service(userID):
+  """
+  Clear the chatbot session for a given user.
+
+  This function retrieves the user's chatbot session from the database,
+  clears the session, and returns a confirmation message.
+
+  Args:
+      userID (str): The unique identifier of the user.
+
+  Returns:
+      str: A message indicating that the session was cleared successfully.
+  """
   user = await Database.read("users", userID)
   user_chatbot_session_id = user["chatbotSessionId"]
   db_user_chatbot_session = await Database.read("chatbotSession",user_chatbot_session_id)

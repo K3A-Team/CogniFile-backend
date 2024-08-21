@@ -63,6 +63,19 @@ openAi_embedings = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"),model="t
 
 # Helper function to extract the unique file's ids from the vector DB results
 def extract_unique_file_ids(data):
+    """
+    Extract unique file IDs from vector database results.
+
+    This function iterates through the matches in the provided data, extracts the file IDs
+    from the metadata, and returns a list of unique file IDs.
+
+    Args:
+        data (dict): The data containing matches from the vector database. Each match should
+                     have a 'metadata' field with a 'file_id' key.
+
+    Returns:
+        list: A list of unique file IDs extracted from the matches.
+    """
     file_ids = []
     for match in data['matches']:
         if 'file_id' in match['metadata']:
@@ -71,6 +84,21 @@ def extract_unique_file_ids(data):
     return list(file_ids)
 
 def nlp_search_service(query : str,userID : str):
+    """
+    Perform an NLP-based search for a given query and user ID.
+
+    This function uses an NLP model to extract relevant information from the query,
+    embeds the extracted information into a vector, and queries a content index to find
+    the most relevant files for the user. It returns a list of unique file IDs that match
+    the search criteria.
+
+    Args:
+        query (str): The search query provided by the user.
+        userID (str): The unique identifier of the user performing the search.
+
+    Returns:
+        list: A list of unique file IDs that match the search criteria.
+    """
     KEYWORD_EXTRACTION_PROMPT_TEXT[1] = ("human", query)
     infos_extraction_response = gemini_model.invoke(KEYWORD_EXTRACTION_PROMPT_TEXT)
     relevant_infos = infos_extraction_response.content
@@ -86,6 +114,20 @@ def nlp_search_service(query : str,userID : str):
     return  extract_unique_file_ids(vectors)
 
 def name_search_service(query,userID):
+    """
+    Perform a name-based search for a given query and user ID.
+
+    This function uses an embedding model to convert the query into a vector,
+    and then queries a names index to find the most relevant matches for the user.
+    It returns a list of unique file IDs that match the search criteria.
+
+    Args:
+        query (str): The search query provided by the user.
+        userID (str): The unique identifier of the user performing the search.
+
+    Returns:
+        list: A list of unique file IDs that match the search criteria.
+    """
     embeded_query = openAi_embedings.embed_query(query)
     vectors = names_index.query(
         vector=embeded_query,
@@ -98,6 +140,20 @@ def name_search_service(query,userID):
     return  extract_unique_file_ids(vectors)
 
 def search_service(query : str,userID : str):
+    """
+    Perform a search based on the query and user ID.
+
+    This function classifies the query using a language model to determine the type of search to perform.
+    Depending on the classification result, it either performs a name-based search or an NLP-based search.
+    It returns a list of unique file IDs that match the search criteria.
+
+    Args:
+        query (str): The search query provided by the user.
+        userID (str): The unique identifier of the user performing the search.
+
+    Returns:
+        list: A list of unique file IDs that match the search criteria.
+    """
     llm_prompt = QUERY_CLASSIFICATION_PROMPT_TEMPLATE.format_messages(
         query = query
     )
@@ -111,6 +167,25 @@ def search_service(query : str,userID : str):
 #--------------------------------------------
 
 def query_search_service(query: str, tags: str, userID: str):
+    """
+    Perform a search based on the query or tags for a given user ID.
+
+    This function searches for files and folders accessible to the user based on the provided query or tags.
+    It retrieves the user's accessible and shared files and folders, filters them based on the search criteria,
+    and returns the matched files and folders.
+
+    Args:
+        query (str): The search query provided by the user.
+        tags (str): A comma-separated string of tags to filter the search results.
+        userID (str): The unique identifier of the user performing the search.
+
+    Returns:
+        dict: A dictionary containing the matched files and folders.
+
+    Raises:
+        HTTPException: If neither query nor tags are provided, if both query and tags are provided,
+                       if the user is not found, or if any other error occurs during the search.
+    """
     try:
         if not query and not tags:
             raise HTTPException(status_code=400, detail="Either query or tags must be provided")

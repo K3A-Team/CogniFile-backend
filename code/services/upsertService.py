@@ -27,6 +27,22 @@ openAi_embedings = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"),model="t
 
 # Reading style sheet values as rows (CSV,XLSX)
 async def read_style_sheet(file: UploadFile):
+    """
+    Read and parse a style sheet file (CSV or XLSX) and return its content as rows.
+
+    This function reads the content of an uploaded file, which can be either in CSV or XLSX format.
+    It uses pandas to parse the file and then loads the data into a DataFrameLoader to extract rows.
+    The function returns the rows and the name of the first column.
+
+    Args:
+        file (UploadFile): The uploaded file to read and parse.
+
+    Returns:
+        list: A list containing the rows of the file and the name of the first column.
+
+    Raises:
+        ValueError: If the file format is not supported.
+    """
     match os.path.splitext(file.filename)[1].lower():
         case '.csv': 
             df = pd.read_csv(file.file)
@@ -40,6 +56,20 @@ async def read_style_sheet(file: UploadFile):
 
 # Spliting rows into chunks
 def split_rows(rows,page_content):
+    """
+    Split rows into chunks and combine metadata with content.
+
+    This function splits the given rows into smaller chunks of a specified size.
+    For each chunk, it combines the metadata and content of each row using the
+    `combine_metadata_and_content` function. The chunks are then converted to strings.
+
+    Args:
+        rows (list): The list of rows to be split into chunks.
+        page_content (str): The page content to be combined with each row's metadata.
+
+    Returns:
+        list: A list of stringified chunks, where each chunk is a list of combined metadata and content.
+    """
     chunks = [rows[i:i + ROWS_FOR_ONE_CHUNCK] for i in range(0, len(rows), ROWS_FOR_ONE_CHUNCK)]
     chunks = [[combine_metadata_and_content(row=row,page_content=page_content) for row in chunk] for chunk in chunks]
     chunks = [str(chunk) for chunk in chunks]
@@ -47,6 +77,20 @@ def split_rows(rows,page_content):
 
 # Reading file values as text (TXT,PDF)
 async def read_text(file: UploadFile,url):
+    """
+    Split rows into chunks and combine metadata with content.
+
+    This function splits the given rows into smaller chunks of a specified size.
+    For each chunk, it combines the metadata and content of each row using the
+    `combine_metadata_and_content` function. The chunks are then converted to strings.
+
+    Args:
+        rows (list): The list of rows to be split into chunks.
+        page_content (str): The page content to be combined with each row's metadata.
+
+    Returns:
+        list: A list of stringified chunks, where each chunk is a list of combined metadata and content.
+    """
     text = ''
     match os.path.splitext(file.filename)[1].lower():
         case '.pdf':
@@ -70,6 +114,19 @@ async def read_text(file: UploadFile,url):
 
 # Spliting text 
 def split_text(text):
+    """
+    Split the given text into chunks using a recursive character text splitter.
+
+    This function splits the input text into smaller chunks of a specified size,
+    with a specified overlap between chunks. It uses the RecursiveCharacterTextSplitter
+    to perform the splitting.
+
+    Args:
+        text (str): The text to be split into chunks.
+
+    Returns:
+        list: A list of text chunks.
+    """
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200,
@@ -79,6 +136,22 @@ def split_text(text):
     return chunks
     
 def upsert_content_to_pinecone(chunks, file_name,file_id,batch_size,userID):
+    """
+    Upsert content chunks to Pinecone in batches.
+
+    This function takes the text chunks, embeds them, and upserts them to the Pinecone index
+    in batches. Each chunk is associated with metadata including the file name, file ID, and user ID.
+
+    Args:
+        chunks (list): The list of text chunks to be upserted.
+        file_name (str): The name of the file.
+        file_id (str): The unique identifier of the file.
+        batch_size (int): The number of chunks to process in each batch.
+        userID (str): The unique identifier of the user.
+
+    Returns:
+        None
+    """
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i:i+batch_size]
         ids = [f"{file_name}_{j}" for j in range(i, i+len(batch))]
@@ -92,6 +165,20 @@ def upsert_content_to_pinecone(chunks, file_name,file_id,batch_size,userID):
         conetnt_index.upsert(vectors=list(to_upsert))
         
 def upsert_name_to_pinecone(file_name : str,file_id : str,userID : str):
+    """
+    Upsert the file name to Pinecone.
+
+    This function embeds the file name and upserts it to the Pinecone index
+    along with metadata including the file ID and user ID.
+
+    Args:
+        file_name (str): The name of the file.
+        file_id (str): The unique identifier of the file.
+        userID (str): The unique identifier of the user.
+
+    Returns:
+        None
+    """
     # meatadata 
     metadata = {"file_name": file_name, "file_id": file_id, "user_id": userID}
     # embedings 
@@ -106,11 +193,41 @@ def upsert_name_to_pinecone(file_name : str,file_id : str,userID : str):
 
 # Helper function to transform DataFrameLoader values 
 def combine_metadata_and_content(row,page_content):
+    """
+    Combine metadata and content from a DataFrame row.
+
+    This function takes a row from a DataFrameLoader and combines its metadata
+    with the page content.
+
+    Args:
+        row (DataFrameLoader): The row from the DataFrameLoader.
+        page_content (str): The page content to be combined with the row's metadata.
+
+    Returns:
+        dict: A dictionary containing the combined metadata and content.
+    """
     combined = dict(row.metadata)
     combined[page_content] = row.page_content
     return combined
 
 async def process_and_upsert_service(file,name,file_id,url,userID):
+    """
+    Process and upsert the content of a file to Pinecone.
+
+    This function processes the uploaded file based on its extension and upserts its content
+    and name to the Pinecone index. It handles different file formats including CSV, XLSX, PDF,
+    DOCX, and TXT.
+
+    Args:
+        file (UploadFile): The uploaded file to be processed.
+        name (str): The name of the file.
+        file_id (str): The unique identifier of the file.
+        url (str): The URL of the file.
+        userID (str): The unique identifier of the user.
+
+    Returns:
+        None
+    """
     # Upserting the file's name 
     upsert_name_to_pinecone(name,file_id,userID)
     
