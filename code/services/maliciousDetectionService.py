@@ -2,6 +2,9 @@ import os
 import requests
 import time
 
+
+# This logic is working but is subject to performance optimization , so it's commented until it's improved
+# Kudos to @ELHart05 for the implementation
 async def is_file_malicious(file_content: bytes) -> bool:
     '''
     VIRUSTOTAL_URL = 'https://www.virustotal.com/api/v3/files'

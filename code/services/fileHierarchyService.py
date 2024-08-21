@@ -41,6 +41,23 @@ MODEL_TEMP = 0.0
 MODEL = ChatGoogleGenerativeAI(model="gemini-1.5-flash",temperature=MODEL_TEMP,google_api_key=os.getenv("GEMINI_API_KEY"))
 
 def get_folder_hierarchy(folder_id, displayFileId = False , displayFolderId = False):
+    """
+    Retrieve the folder hierarchy for a given folder ID.
+
+    This function fetches the folder document from the database using the provided folder ID,
+    and constructs a hierarchical structure containing the names of the folders and files.
+    It can optionally include file and folder IDs in the hierarchy. The function recursively
+    processes subfolders to build the complete hierarchy.
+
+    Args:
+        folder_id (str): The unique identifier of the folder to retrieve the hierarchy for.
+        displayFileId (bool): Whether to include file IDs in the hierarchy. Defaults to False.
+        displayFolderId (bool): Whether to include folder IDs in the hierarchy. Defaults to False.
+
+    Returns:
+        Dict[str, Any]: A dictionary representing the folder hierarchy with names and optionally IDs.
+                        Returns None if the folder does not exist.
+    """
     folder_ref = db.collection('folders').document(folder_id)
     folder_doc = folder_ref.get()
     
@@ -84,6 +101,20 @@ def get_folder_hierarchy(folder_id, displayFileId = False , displayFolderId = Fa
     return hierarchy
 
 def get_folder_hierarchy_names_only(folder_id):
+    """
+    Retrieve the folder hierarchy with only names for a given folder ID.
+
+    This function fetches the folder document from the database using the provided folder ID,
+    and constructs a hierarchical structure containing only the names of the folders and files.
+    It recursively processes subfolders to build the complete hierarchy.
+
+    Args:
+        folder_id (str): The unique identifier of the folder to retrieve the hierarchy for.
+
+    Returns:
+        Dict[str, Any]: A dictionary representing the folder hierarchy with names only.
+                        Returns None if the folder does not exist.
+    """
     folder_ref = db.collection('folders').document(folder_id)
     folder_doc = folder_ref.get()
     
@@ -115,7 +146,22 @@ def get_folder_hierarchy_names_only(folder_id):
     return hierarchy
 
 def optimize_hierarchy(folder_id):
-    
+    """
+    Optimize the folder hierarchy using an AI model.
+
+    This function retrieves the current folder hierarchy, sends it to an AI model for optimization,
+    and processes the returned JSON structure to extract the optimized hierarchy and its description.
+
+    Args:
+        folder_id (str): The unique identifier of the folder to optimize.
+
+    Returns:
+        Tuple[Dict[str, Any], str]: A tuple containing the optimized folder hierarchy as a dictionary
+                                    and a description of the AI's optimization.
+
+    Raises:
+        ValueError: If the AI model's response does not contain valid JSON.
+    """
     # Building and sending the prompt
     folder_hierarchy = json.dumps(get_folder_hierarchy_names_only(folder_id))
     llm_prompt = PROMPT_TEMPLATE.format_messages(
@@ -132,172 +178,19 @@ def optimize_hierarchy(folder_id):
 
 
 
-
-
-
-
-def generateFileMap(initial_structure: Dict[str, Any]) -> Dict[str, Any]:
-    file_map = defaultdict(list)
-    for file in initial_structure['files']:
-        file_map[file['name']].append(file['id'])
-    return file_map
-
-def generateSubFoldersMap(current_folder : Folder) -> Dict[str, Any]:
-    return {subfolder.name: subfolder for subfolder in current_folder.getSubfolders()}
-'''
-@firestore.transactional
-async def update_folder_structure(transaction, root_folder: Folder, ai_structure: Dict[str, Any], initial_structure: Dict[str, Any]) -> Folder:
-    file_map = generateFileMap(initial_structure)
-    processed_folders = set()
-
-    def update_structure_recursive(structure: Dict[str, Any], current_folder: Folder):
-        processed_folders.add(current_folder.id)
-        existing_subfolders = generateSubFoldersMap(current_folder)
-        subfolders_to_keep = set()
-
-        for child in structure.get('children', []):
-            if child['name'] in existing_subfolders:
-                subfolder = existing_subfolders[child['name']]
-                update_structure_recursive(child, subfolder)
-                subfolders_to_keep.add(subfolder.id)
-            else:
-                new_subfolder = current_folder.createSubFolderTransactional(child['name'], transaction)
-                update_structure_recursive(child, new_subfolder)
-                subfolders_to_keep.add(new_subfolder.id)
-            print("Updated childs")
-
-        for subfolder in existing_subfolders.values():
-            if subfolder.id not in subfolders_to_keep:
-                delete_folder_recursively(subfolder)
-                print("Deleted subfolders")
-
-        current_folder.files = []
-
-        for file in structure.get('files', []):
-            file_name = file['name'] if isinstance(file, dict) else file
-            
-            if file_name in file_map and file_map[file_name]:
-                file_id = file_map[file_name].pop(0)
-                if not file_map[file_name]:
-                    del file_map[file_name]
-            else:
-                file_id = str(uuid.uuid4())
-                transaction.set(db.collection('files').document(file_id), {
-                    'id': file_id,
-                    'name': file_name,
-                    'ownerId': current_folder.ownerId,
-                    'parent': current_folder.id
-                })
-
-            current_folder.createFileTransactional(file_id, transaction)
-            print("Created file")
-
-        transaction.set(db.collection('folders').document(current_folder.id), current_folder.to_dict())
-
-    def delete_folder_recursively(folder: Folder):
-        for subfolder in folder.getSubfolders():
-            delete_folder_recursively(subfolder)
-        
-        for file_id in folder.files:
-            transaction.delete(db.collection('files').document(file_id))
-        
-        transaction.delete(db.collection('folders').document(folder.id))
-
-    # Start the recursive update
-    update_structure_recursive(ai_structure, root_folder)
-
-    # Handle unused files within the same transaction
-    unused_files = [f for files in file_map.values() for f in files]
-    for file_id in unused_files:
-        root_folder.createFileTransactional(file_id, transaction)
-
-    print("Cleaned unused files")
-
-    # Update the root folder one last time to ensure all changes are saved
-    transaction.set(db.collection('folders').document(root_folder.id), root_folder.to_dict())
-
-    return root_folder.to_dict()
-
-
-def generateFileMap(initial_structure: Dict[str, Any]) -> Dict[str, Any]:
-    file_map = defaultdict(list)
-    for file in initial_structure['files']:
-        file_map[file['name']].append(file['id'])
-    return file_map
-
-def generateSubFoldersMap(current_folder : Folder) -> Dict[str, Any]:
-    return {subfolder.name: subfolder for subfolder in current_folder.getSubfolders()}
-
-def update_folder_structure(root_folder: Folder, ai_structure: Dict[str, Any], initial_structure: Dict[str, Any]) -> Folder:
-    file_map = generateFileMap(initial_structure)
-
-    processed_folders = set()
-
-    def update_structure(structure: Dict[str, Any], current_folder: Folder):
-        processed_folders.add(current_folder.id)
-        existing_subfolders = generateSubFoldersMap(current_folder)
-        subfolders_to_keep = set()
-
-
-        for child in structure.get('children', []):
-            if child['name'] in existing_subfolders:
-
-                subfolder = existing_subfolders[child['name']]
-                update_structure(child, subfolder)
-                subfolders_to_keep.add(subfolder.id)
-            else:
-
-                subfolder = current_folder.createSubFolder(child['name'])
-                update_structure(child, subfolder)
-                subfolders_to_keep.add(subfolder.id)
-
-        for subfolder in existing_subfolders.values():
-            if subfolder.id not in subfolders_to_keep:
-                delete_folder_recursively(subfolder)
-
-        current_folder.files = []
-
-        for file in structure.get('files', []):
-            file_name = file['name'] if isinstance(file, dict) else file
-            
-            if file_name in file_map and file_map[file_name]:
-                file_id = file_map[file_name].pop(0)
-                if not file_map[file_name]:
-                    del file_map[file_name]
-            else:
-                file_id = str(uuid.uuid4())
-                db.collection('files').document(file_id).set({
-                    'id': file_id,
-                    'name': file_name,
-                    'ownerId': current_folder.ownerId,
-                    'parent': current_folder.id
-                })
-
-            current_folder.createFile(file_id)
-
-        db.collection('folders').document(current_folder.id).set(current_folder.to_dict())
-
-    def delete_folder_recursively(folder: Folder):
-        for subfolder in folder.getSubfolders():
-            delete_folder_recursively(subfolder)
-        
-        for file_id in folder.files:
-            db.collection('files').document(file_id).delete()
-        
-        db.collection('folders').document(folder.id).delete()
-
-
-    update_structure(ai_structure, root_folder)
-    print("ok1")
-
-    unused_files = [f for files in file_map.values() for f in files]
-    for file_id in unused_files:
-        root_folder.createFile(file_id)
-
-    return root_folder
-'''
-
 def generateFileMap(structure: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate a map of file names to their corresponding IDs from a hierarchical file structure.
+
+    This function traverses a nested dictionary representing a file hierarchy,
+    and creates a mapping where each file name is associated with a list of its IDs.
+
+    Args:
+        structure (Dict[str, Any]): The hierarchical structure of files and directories.
+
+    Returns:
+        Dict[str, Any]: A dictionary mapping file names to lists of their IDs.
+    """
     file_map = defaultdict(list)
 
     def traverse(node: Dict[str, Any]):
@@ -311,9 +204,38 @@ def generateFileMap(structure: Dict[str, Any]) -> Dict[str, Any]:
     return file_map
 
 def generateSubFoldersMap(current_folder: Folder) -> Dict[str, Any]:
+    """
+    Generate a map of subfolder names to their corresponding Folder objects.
+
+    This function iterates through the subfolders of the given folder and creates
+    a dictionary where each subfolder name is associated with its Folder object.
+
+    Args:
+        current_folder (Folder): The folder whose subfolders are to be mapped.
+
+    Returns:
+        Dict[str, Any]: A dictionary mapping subfolder names to their Folder objects.
+    """
     return {subfolder.name: subfolder for subfolder in current_folder.getSubfolders()}
 
 def update_folder_structure_batched(root_folder: Folder, ai_structure: Dict[str, Any], initial_structure: Dict[str, Any]) -> Folder:
+    """
+    Update the folder structure in a batched manner based on AI-generated and initial structures.
+
+    This function updates the folder hierarchy by comparing the AI-generated structure with the initial structure.
+    It processes the folders and files in batches to optimize database operations and ensure consistency.
+
+    Args:
+        root_folder (Folder): The root folder to start the update from.
+        ai_structure (Dict[str, Any]): The AI-generated folder structure.
+        initial_structure (Dict[str, Any]): The initial folder structure.
+
+    Returns:
+        Folder: The updated root folder.
+
+    Raises:
+        Exception: If the number of files exceeds the maximum allowed or if the maximum depth is reached.
+    """
     batch = db.batch()
     file_map = generateFileMap(initial_structure)
     processed_folders = set()
