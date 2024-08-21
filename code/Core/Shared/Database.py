@@ -141,9 +141,25 @@ class Database:
                 }
                 for subfolder in sub_folders
             ]
+
+        # Getting info about parent folder
+
+        parent_folder_id = folder.get('parent')
+        parent_folder = None
+
+        if parent_folder_id:
+            parent_folder_ref = db.collection('folders').document(parent_folder_id)
+            parent_folder = parent_folder_ref.get().to_dict()
+
+            parent_folder = {
+                'name': parent_folder.get('name'),
+                'id': parent_folder.get('id'),
+                'children': len(parent_folder.get('subFolders'))
+            }
  
         folder["files"] = files
         folder["subFolders"] = sub_folders
+        folder["parent"] = parent_folder
 
         return folder
 
