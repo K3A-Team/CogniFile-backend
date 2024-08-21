@@ -136,7 +136,7 @@ class Database:
             sub_folders = [
                 {
                     'name': subfolder.get('name'),
-                    'children': len(subfolder.get('subFolders')),
+                    'children': len(subfolder.get('subFolders') + subfolder.get('files')),
                     'id': subfolder.get('id')
                 }
                 for subfolder in sub_folders
@@ -154,7 +154,7 @@ class Database:
             parent_folder = {
                 'name': parent_folder.get('name'),
                 'id': parent_folder.get('id'),
-                'children': len(parent_folder.get('subFolders'))
+                'children': len(parent_folder.get('subFolders') + parent_folder.get('files'))
             }
  
         folder["files"] = files
