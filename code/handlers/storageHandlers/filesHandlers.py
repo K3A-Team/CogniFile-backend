@@ -13,7 +13,8 @@ from services.hashService import generate_file_hash, is_file_duplicate
 from services.calcSizeService import get_readable_file_size
 from services.maliciousDetectionService import is_file_malicious
 from services.upsertService import process_and_upsert_service
-import time
+import datetime
+from Core.Shared.Database import db
 
 async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...), force: bool | None = None):
     """
@@ -29,8 +30,6 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     Raises:
         Exception: If the folder ID is not specified, the folder does not exist, or the user does not have write permissions.
     """
-
-    start = time.time()
 
 
     parentFolder = None
@@ -117,10 +116,12 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         url=url,
         size=get_readable_file_size(file_size),
         tags=tags,
+        interactionDate=datetime.datetime.now().isoformat()
     )
 
 
     parentFolder["files"].append(fileObj.id)
+    parentFolder["interactionDate"] = datetime.datetime.now().isoformat()
     await Database.edit("folders", folderId, parentFolder)
     await updateUsedSpace(userID, file_size)
 
@@ -145,6 +146,10 @@ async def getFileHandler(userID:str, fileID: str):
         Exception: If the user does not have read or write permissions for the file.
     """
     file = await Database.getFile(fileID=fileID)
+    doc_ref = db.collection("files").document(fileID)
+    doc_ref.update({
+        "interactionDate": datetime.datetime.now().isoformat()
+    })
     if ((userID != file["ownerId"]) and (userID not in file["readId"])):
         raise Exception("You are not allowed to access this directory")
     else:

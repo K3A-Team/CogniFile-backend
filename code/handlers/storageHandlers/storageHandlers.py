@@ -1,4 +1,5 @@
-from Core.Shared.Database import Database
+from Core.Shared.Database import Database , db
+from firebase_admin import firestore
 
 def get_shared_content_handler(searchQuery: str, userID: str):
     """
@@ -71,6 +72,70 @@ def get_shared_content_handler(searchQuery: str, userID: str):
             "files": all_shared_files,
             "folders": all_shared_folders
         }
+
+    except Exception as e:
+        raise Exception(str(e))
+
+
+def getRecentElementsHandler(userId,MAX_ITEMS=10):
+    try:
+
+        items = []
+
+        folders_ref = db.collection('folders')
+        query = folders_ref.where('ownerId', '==', userId) \
+                .order_by('interactionDate', direction=firestore.Query.DESCENDING )\
+                .limit(MAX_ITEMS)
+        results = query.stream()
+
+
+        for folder in results:
+            folderDict = folder.to_dict()
+            folderDict['type'] = 'folder'
+            items.append(folderDict)
+
+
+        files_ref = db.collection('files')
+        query = files_ref.where('ownerId', '==', userId) \
+                .order_by('interactionDate', direction=firestore.Query.DESCENDING )\
+                .limit(MAX_ITEMS)
+
+        results = query.stream()
+
+        for file in results:
+            fileDict = file.to_dict()
+            fileDict['type'] = 'file'
+            items.append(fileDict)
+
+        # Trier les items par date d'interaction
+
+        items.sort(key=lambda x: x['interactionDate'], reverse=True)
+
+        # Récupérer les 10 premiers
+
+        items = items[:10]
+
+        for index, item in enumerate(items):
+            if item['type'] == 'folder':
+                # Update the folder item with new structure
+                items[index] = {
+                    'name': item.get('name'),
+                    'size': '0 Mb',
+                    'children': len(item.get('subFolders', [])) + len(item.get('files', [])),
+                    'interactionDate': item.get('interactionDate'),
+                    'type': 'folder'
+                }
+            elif item['type'] == 'file':
+                # Update the file item with new structure
+                items[index] = {
+                    'name': item.get('name'),
+                    'size': item.get('size'),
+                    'url': item.get('url'),
+                    'interactionDate': item.get('interactionDate'),
+                    'type': 'file'
+                }
+
+        return items
 
     except Exception as e:
         raise Exception(str(e))

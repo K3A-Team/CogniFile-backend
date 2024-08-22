@@ -7,6 +7,7 @@ from Middlewares.authProtectionMiddlewares import LoginProtected
 from Routers.foldersRouter import foldersRouter
 from Routers.filesRouter import filesRouter
 from handlers.storageHandlers.storageHandlers import get_shared_content_handler
+from handlers.storageHandlers.storageHandlers import getRecentElementsHandler
 
 # Create a new APIRouter instance for storage-related routes
 storageRouter = APIRouter()
@@ -22,6 +23,20 @@ def getSharedContent(search: str = None, userID: str = Depends(LoginProtected)):
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+    
+@storageRouter.get("/recent")
+def getRecentElements(userID: str = Depends(LoginProtected)):
+    """
+    Retrieves the recent files and folders.
+    """
+    try:
+        result = getRecentElementsHandler(userID)
+        return {"success": True, "result": result}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+    
+
 
 # Nest foldersRouter and filesRouter inside storageRouter
 storageRouter.include_router(foldersRouter, tags=["folders"], prefix="/folder")

@@ -2,6 +2,7 @@ from typing import List
 import uuid
 from Core.Shared.Database import db
 from firebase_admin import firestore
+import datetime
 
 class Folder:
     """
@@ -17,6 +18,7 @@ class Folder:
             writeId: List[str] = [],
             subFolders: List[str] = [], 
             files: List[str] = [],
+            interactionDate = None
             ):
         self.id = id or str(uuid.uuid4())
         self.name = name
@@ -25,6 +27,7 @@ class Folder:
         self.writeId = writeId
         self.parent = parent 
         self.subFolders = subFolders
+        self.interactionDate = interactionDate or datetime.datetime.now().isoformat()
         self.files = files
 
     @staticmethod
@@ -48,7 +51,9 @@ class Folder:
             writeId= folderDict['writeId'],
             parent= folderDict['parent'],
             subFolders= folderDict['subFolders'],
-            files= folderDict['files']
+            files= folderDict['files'],
+            interactionDate= folderDict['interactionDate']
+
         )
     
     @staticmethod
@@ -62,7 +67,8 @@ class Folder:
             writeId= folderDict['writeId'],
             parent= folderDict['parent'],
             subFolders= folderDict['subFolders'],
-            files= folderDict['files']
+            files= folderDict['files'],
+            interactionDate= folderDict['interactionDate']
         )
 
 
@@ -75,7 +81,8 @@ class Folder:
             "writeId": self.writeId,
             "parent": self.parent,
             "subFolders": self.subFolders,
-            "files": self.files
+            "files": self.files,
+            "interactionDate": self.interactionDate
         }
 
     def createSubFolder(self, name: str) -> str:
@@ -91,6 +98,7 @@ class Folder:
         """
         subfolder = Folder(name=name,ownerId= self.ownerId,parent= self.id , readId= self.readId, writeId= self.writeId)
         self.subFolders.append(subfolder.id)
+        self.interactionDate = datetime.datetime.now().isoformat()
         db.collection('folders').document(subfolder.id).set(subfolder.to_dict())
         return subfolder
     
@@ -105,7 +113,8 @@ class Folder:
             str: The ID of the newly created file.
         """
         self.files.append(fileId)
-        db.collection('files').document(fileId).update({"parent": self.id})
+        self.interactionDate = datetime.datetime.now().isoformat()
+        db.collection('files').document(fileId).update({"parent": self.id , "interactionDate": self.interactionDate})
         return fileId
     
     def createFileTransactional(self, fileId, transaction) -> str:
@@ -120,7 +129,8 @@ class Folder:
             str: The ID of the newly created file.
         """
         self.files.append(fileId)
-        transaction.update(db.collection('files').document(fileId), {"parent": self.id})
+        self.interactionDate = datetime.datetime.now().isoformat()
+        transaction.update(db.collection('files').document(fileId), {"parent": self.id , "interactionDate": self.interactionDate})
         return fileId
         
     
@@ -155,13 +165,17 @@ class Folder:
         """
         subfolder = Folder(name=name, ownerId=self.ownerId, parent=self.id, readId=self.readId, writeId=self.writeId)
         self.subFolders.append(subfolder.id)
+
+        subfolderDict = subfolder.to_dict()
+        subfolderDict['interactionDate'] = datetime.datetime.now().isoformat()
         
         # Use the transaction to set the new subfolder document
-        transaction.set(db.collection('folders').document(subfolder.id), subfolder.to_dict())
+        transaction.set(db.collection('folders').document(subfolder.id), subfolderDict)
         
         # Update the current folder's subFolders list in the transaction
         transaction.update(db.collection('folders').document(self.id), {
-            'subFolders': firestore.ArrayUnion([subfolder.id])
+            'subFolders': firestore.ArrayUnion([subfolder.id]),
+            'interactionDate': datetime.datetime.now().isoformat()
         })
         
         return subfolder

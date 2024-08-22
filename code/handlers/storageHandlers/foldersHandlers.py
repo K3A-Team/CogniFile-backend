@@ -4,6 +4,8 @@ from Core.Shared.Security import *
 from Core.Shared.Utils import *
 from Core.Shared.ErrorResponses import *
 from Models.Entities.Folder import Folder
+import datetime
+from Core.Shared.Database import db
 
 async def createFolderHandler(userID:str, folderName: str , parentFolderID: str = None):
     """
@@ -55,11 +57,16 @@ async def getFolderHandler(userID: str, folderID: str):
         Exception: If the user does not have read or write permissions for the folder.
     """
     folder = await Database.getFodlerFormatted(folderID)
+    db.collection("folders").document(folderID).update({
+        "interactionDate": datetime.datetime.now().isoformat()
+    })
 
     if ((userID != folder["ownerId"]) and (userID not in folder["readId"]) and (userID not in folder["writeId"])):
         raise Exception("You are not allowed to access this directory")
 
     # get data about the subfolders and files 
+
+    folder["interactionDate"] = datetime.datetime.now().isoformat()
 
 
     
