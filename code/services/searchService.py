@@ -8,6 +8,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain.prompts import ChatPromptTemplate
 from langchain_openai import OpenAIEmbeddings
+from Core.Shared.Database import db
 
 # Search and model params
 MODEL_TEMP = 0.0
@@ -160,9 +161,13 @@ def search_service(query : str,userID : str):
     classification_result = gemini_model.invoke(llm_prompt)
     
     if '1' in classification_result.content:
-        return name_search_service(query=query,userID=userID)
+        unique_ids = name_search_service(query=query,userID=userID)
     else :
-        return nlp_search_service(query=query,userID=userID)
+        unique_ids = nlp_search_service(query=query,userID=userID)
+    # Ftech the files
+    file_refs = db.collection('files').where("id", 'in', unique_ids).stream()
+    files = [file.to_dict() for file in file_refs]
+    return files
 
 #--------------------------------------------
 
