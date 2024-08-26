@@ -1,4 +1,4 @@
-import os,io
+import os,io,ast
 from pinecone import Pinecone
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from fastapi import UploadFile
@@ -7,10 +7,36 @@ import pandas as pd
 from langchain_community.document_loaders.dataframe import DataFrameLoader
 from langchain_community.document_loaders.pdf import PyPDFLoader
 from langchain_openai import OpenAIEmbeddings
+from langchain.prompts import ChatPromptTemplate
 from docx import Document
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 ROWS_FOR_ONE_CHUNCK = 20
+TAGS_GENERATION_CHUNKS = 10
+MODEL_TEMP = 0.0
 SUPPORTED_EXTENSIONS = ['.csv','.xlsx','.docx','.pdf','.txt']
+
+TAGS_GENERATION_PROMPT = '''You are an expert tagger and content analyzer. Your task is to generate an array of 3 relevant tags for the following text, which has been extracted from a file.
+File details:
+
+File name: {file_name}
+File extension: {file_extension}
+Extracted content: {extracted_content}
+
+Based on the file type and the content provided, generate an array of 3 strings containing tags that accurately describe the main topics, themes, technologies, concepts, and key elements present in the text. The tags should be concise, relevant, and helpful for categorizing and searching for this content.
+Consider the following aspects when generating tags:
+
+* The file type and its typical use cases
+* Main subjects or topics discussed
+* Key concepts or ideas presented
+* Relevant industries or domains
+* General themes or categories that apply to the content
+
+Provide your response as a Python-style array of strings, with each of the 3 tag enclosed in quotes and separated by commas. For example:
+["Tag1", "Tag2", "Tag3"]
+Ensure that the 3 tags are diverse and cover various aspects of the content, but remain relevant and accurate.'''
+
+TAGS_GENERATION_PROMPT_TEMPLATE = ChatPromptTemplate.from_template(TAGS_GENERATION_PROMPT)
 
 pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
 
@@ -22,6 +48,7 @@ names_index = pc.Index(NAMES_INDEX_NAME)
 
 gemini_embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key=os.getenv("GEMINI_API_KEY"))
 openAi_embedings = OpenAIEmbeddings(api_key=os.getenv("OPENAI_API_KEY"),model="text-embedding-3-large")
+gemini_model = ChatGoogleGenerativeAI(model="gemini-1.5-flash",temperature=MODEL_TEMP,google_api_key=os.getenv("GEMINI_API_KEY"))
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -210,7 +237,36 @@ def combine_metadata_and_content(row,page_content):
     combined[page_content] = row.page_content
     return combined
 
-async def process_and_upsert_service(file,name,file_id,url,userID):
+async def generate_tags(name,content,extension):
+    """
+    Asynchronously generates tags for a given file content using the Gemini AI model.
+
+    This function takes the file name, content, and extension as input, formats a prompt
+    for the AI model, and then uses the model to generate relevant tags. It extracts
+    the generated tags from the model's response and returns them as a list.
+
+    Args:
+    name (str): The name of the file.
+    content (str): The content of the file to be analyzed.
+    extension (str): The file extension (e.g., 'txt', 'py', 'java').
+
+    Returns:
+    list: A list of strings representing the generated tags.
+    """
+    # Building and sending the prompt
+    llm_prompt = TAGS_GENERATION_PROMPT_TEMPLATE.format_messages(
+        file_name = name,
+        file_extension = extension,
+        extracted_content = content
+    )
+    llm_result = await gemini_model.ainvoke(llm_prompt)
+    # Extracting the tags
+    array_start = llm_result.content.index('[')
+    array_end = llm_result.content.rindex(']') + 1
+    tags = ast.literal_eval(llm_result.content[array_start:array_end])
+    return tags
+
+async def process_and_upsert_service(file,name,file_id,url,userID,saved_name):
     """
     Process and upsert the content of a file to Pinecone.
 
@@ -235,17 +291,25 @@ async def process_and_upsert_service(file,name,file_id,url,userID):
     file_ext = os.path.splitext(file.filename)[1].lower()
     if (file_ext not in SUPPORTED_EXTENSIONS):
         # No upserting (for the moment)
-        return
+        return []
     if(file_ext == '.csv' or file_ext == '.xlsx' ):
         # Upserting rows
         rows,page_content = await read_style_sheet(file)
         chunks = split_rows(rows,page_content=page_content)
         upsert_content_to_pinecone(chunks,name,file_id,50,userID)
+        # Generating tags
+        extracted_content = ' '.join(chunks[:min(TAGS_GENERATION_CHUNKS, len(chunks))])
+        tags = await generate_tags(name=saved_name,content=extracted_content,extension=file_ext)
+        return tags
     else:
         # Upserting text
         text = await read_text(file,url)
         chunks = split_text(text)
         upsert_content_to_pinecone(chunks,name,file_id,100,userID)
+        # Generating tags
+        extracted_content = ' '.join(chunks[:min(TAGS_GENERATION_CHUNKS, len(chunks))])
+        tags = await generate_tags(name=saved_name,content=extracted_content,extension=file_ext)
+        return tags
     
     # For further use
     file.file.seek(0)

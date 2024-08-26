@@ -59,6 +59,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
 
     
     name, ext = os.path.splitext(file.filename)
+    saved_name = name
     
     duplicate_check = await is_file_duplicate(file_hash, folderId)
     if duplicate_check["is_duplicate"]:
@@ -106,6 +107,8 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     readId = parentFolder["readId"]
     writeId = parentFolder["writeId"]
     
+
+    
     file_size = len(file_content)
     fileObj = StorageFile(
         name=name,
@@ -119,6 +122,8 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         interactionDate=datetime.datetime.now().isoformat()
     )
 
+    ai_generated_tags = await process_and_upsert_service(file=file,name=name,file_id=fileObj.id,url=url,userID=userID,saved_name=saved_name)
+    fileObj.tags.extend(ai_generated_tags)
 
     parentFolder["files"].append(fileObj.id)
     parentFolder["interactionDate"] = datetime.datetime.now().isoformat()
@@ -126,7 +131,6 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     await updateUsedSpace(userID, file_size)
 
     fileDict = await Database.createFile(fileObj)
-    await process_and_upsert_service(file=file,name=name,file_id=fileObj.id,url=url,userID=userID)
 
     
     return fileDict
