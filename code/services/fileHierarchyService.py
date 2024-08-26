@@ -169,7 +169,7 @@ def optimize_hierarchy(folder_id):
     )
     llm_result = MODEL.invoke(llm_prompt)
     
-    # Hnadling the JSON (langchain offers some way to structure the JSON so this will likely change)
+    # Handling the JSON (langchain offers some way to structure the JSON so this will likely change)
     start = llm_result.content.index('{')
     end = llm_result.content.rindex('}') + 1
     json_str = llm_result.content[start:end]
