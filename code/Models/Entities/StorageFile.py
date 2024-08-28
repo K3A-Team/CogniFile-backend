@@ -16,7 +16,8 @@ class StorageFile:
             tags: List[str] = [],
             readId : List[str] = [], 
             writeId : List[str] = [],
-            interactionDate = str
+            interactionDate = str,
+            ai_description : str = ""
         ):
         self.id = id or str(uuid.uuid4())
         self.name = name
@@ -28,6 +29,7 @@ class StorageFile:
         self.interactionDate = interactionDate or datetime.datetime.now().isoformat()
         self.tags = tags
         self.url = url
+        self.ai_description = ai_description
 
     def to_dict(self) -> dict:
         return {
@@ -40,5 +42,6 @@ class StorageFile:
             "readId": self.readId,
             "writeId": self.writeId,
             "url": self.url,
-            "interactionDate": self.interactionDate
+            "interactionDate": self.interactionDate,
+            "ai_description": self.ai_description
         }
