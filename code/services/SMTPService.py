@@ -10,11 +10,10 @@ SMTP_PORT = int(os.getenv("SMTP_PORT"))
 SMTP_USERNAME = os.getenv("SMTP_USERNAME")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 EMAIL_FROM = os.getenv("EMAIL_FROM")
-EMAIL_SUBJECT = 'Password Reset Request'
 
 async def send_reset_email(email_to: str, reset_link: str, fullname: str):
     msg = MIMEMultipart()
-    msg['Subject'] = EMAIL_SUBJECT
+    msg['Subject'] = "CogniFile - Password Reset Request"
     msg['From'] = EMAIL_FROM
     msg['To'] = email_to
 
@@ -28,6 +27,32 @@ async def send_reset_email(email_to: str, reset_link: str, fullname: str):
     html_content = html_content.replace("$(fullname)", fullname)
     html_content = html_content.replace("$(resetlink)", reset_link)
     
+    msg.attach(MIMEText(html_content, 'html'))
+
+    try:
+        server = smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT)
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        server.sendmail(EMAIL_FROM, email_to, msg.as_string())
+        server.quit()
+
+    except Exception as e:
+        raise e
+    
+async def send_welcome_email(email_to: str, fullname: str):
+    msg = MIMEMultipart()
+    msg['Subject'] = "CogniFile - Welcome to the platform!"
+    msg['From'] = EMAIL_FROM
+    msg['To'] = email_to
+
+    template_dir = os.path.dirname(__file__)
+    rel_path = "../Templates/welcome.html"
+    abs_file_path = os.path.join(template_dir, rel_path)
+    
+    with open(abs_file_path, 'r', encoding='utf-8') as file:
+        html_content = file.read()
+
+    html_content = html_content.replace("$(fullname)", fullname)
+
     msg.attach(MIMEText(html_content, 'html'))
 
     try:
