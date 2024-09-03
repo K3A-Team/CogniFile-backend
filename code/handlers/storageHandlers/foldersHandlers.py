@@ -41,6 +41,21 @@ async def createFolderHandler(userID:str, folderName: str , parentFolderID: str 
     folderDict = await Database.createFolder(folder)
     return folderDict
 
+
+async def createTrashFolderHandler(userID:str):
+    """
+    Creates a new trash folder for the user and stores it in the database.
+    """
+    readId = []
+    writeId = []
+
+    fodlerId = "Trash-" + str(uuid.uuid4())
+
+    folder = Folder(name='Trash', ownerId=userID, parent=None , readId=readId, writeId=writeId , id = fodlerId)
+
+    folderDict = await Database.createFolder(folder)
+    return folderDict['id']
+
 async def getFolderHandler(userID: str, folderID: str):
     """
     Retrieves a folder's data if the user has access permissions and filters based on the search term.
@@ -124,3 +139,28 @@ async def searchContentInFolderRecursive(folderID: str, searchTerm: str, userID:
         "readId": matching_read_users if matching_read_users else all_rw_users.get("readId", []),
         "writeId": matching_write_users if matching_write_users else all_rw_users.get("writeId", []),
     }
+
+
+async def deleteFolderHandler(userId , fodlerId):
+    user = await Database.getUser(userId)
+    folder = await Database.getFolder(fodlerId)
+    parentFolderId = folder["parent"]
+    parentFolder = await Database.getFolder(parentFolderId)
+
+    if folder["ownerId"] != userId and userId not in folder["writeId"]:
+        raise Exception("You are not allowed to delete this folder")
+    
+    trashFolderId = user["trashFolderId"]
+    trashFolder = await Database.getFolder(trashFolderId)
+
+    trashFolder["subFolders"].append(fodlerId)
+    folder["parent"] = trashFolderId
+    parentFolder["subFolders"].remove(fodlerId)
+
+    await Database.edit("folders", trashFolderId, trashFolder)
+    await Database.edit("folders", fodlerId, folder)
+    await Database.edit("folders", parentFolderId, parentFolder)
+
+    return folder
+    
+    

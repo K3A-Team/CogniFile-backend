@@ -6,7 +6,7 @@ from Core.Shared.Security import *
 import uuid
 from Models.Entities.User import User
 from Models.Entities.ChatBotSession import ChatBotSession
-from handlers.storageHandlers.foldersHandlers import createFolderHandler
+from handlers.storageHandlers.foldersHandlers import createFolderHandler , createTrashFolderHandler
 
 async def registerUserHandler(firstname : str, lastname : str, email : str, password : str):
     """
@@ -36,6 +36,8 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
 
     rootFolder = await createFolderHandler(userID=userId, folderName="/")
 
+    TrashFolderId = await createTrashFolderHandler(userID=userId)
+
     rootFolderId = rootFolder["id"]
     
     chatbotSession = ChatBotSession() 
@@ -51,7 +53,8 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
         email=email, 
         password=hashPassword(password),
         rootFolderId=rootFolderId,
-        chatbotSessionId=chatbotSessionDict["id"]
+        chatbotSessionId=chatbotSessionDict["id"],
+        trashFolderId=TrashFolderId
         )
 
     userDict = user.to_dict()

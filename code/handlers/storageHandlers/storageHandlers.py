@@ -1,5 +1,9 @@
 from Core.Shared.Database import Database , db
 from firebase_admin import firestore
+from Models.Entities.Folder import Folder
+from Models.Entities.StorageFile import StorageFile
+from typing import List
+
 
 def get_shared_content_handler(searchQuery: str, userID: str):
     """
@@ -139,3 +143,47 @@ def getRecentElementsHandler(userId,MAX_ITEMS=10):
 
     except Exception as e:
         raise Exception(str(e))
+    
+async def removeTrashHandler(userId: str):
+    """
+    Removes all files and folders in the Trash folder of the user.
+    """
+    try:
+        user =await Database.getUser(userId)
+        # Get the Trash folder of the user
+        folder = await Folder.loadWithId(user.trashFolderId)
+        # Delete all files and folders in the Trash folder
+        batch = db.batch()
+
+        # Recursively delete all files and folders in the Trash folder
+        for subfolder in folder.getSubfolders():
+            delete_folder_recursively(subfolder, batch)
+        for file_id in folder.files:
+            batch.delete(db.collection('files').document(file_id))
+
+        # Commit the batched writes
+        batch.commit()
+
+
+        return {
+            'success': True
+        }
+
+    except Exception as e:
+        raise Exception(str(e))
+
+
+
+MAX_DEPTH = 50
+def delete_folder_recursively(folder: Folder, batch, depth: int = 0):
+        if depth > MAX_DEPTH:
+            print(f"Warning: Maximum depth reached while deleting folder {folder.id}")
+            return
+
+        for subfolder in folder.getSubfolders():
+            delete_folder_recursively(subfolder, batch, depth + 1)
+        
+        for file_id in folder.files:
+            batch.delete(db.collection('files').document(file_id))
+        
+        batch.delete(db.collection('folders').document(folder.id))
