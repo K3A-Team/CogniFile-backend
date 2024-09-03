@@ -1,10 +1,10 @@
 from fastapi import APIRouter, status
-from Models.Requests.AuthRequestsModels import RegisterRequest, LoginRequest
+from Models.Requests.AuthRequestsModels import RegisterRequest, LoginRequest, ResetPasswordRequest, ForgetPasswordRequest
 from starlette.responses import JSONResponse
 from Core.Shared.ErrorResponses import *
 from Middlewares.authProtectionMiddlewares import *
 from Core.Shared.Security import *
-from handlers.authHandlers import registerUserHandler , loginUserHandler
+from handlers.authHandlers import registerUserHandler , loginUserHandler, forgetPasswordHandler, resetPasswordHandler
 
 authRouter = APIRouter()
 
@@ -57,6 +57,50 @@ async def login_user(request: LoginRequest):
             value=jwtToken,
             httponly=True)
         return response
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+@authRouter.post("/forget-password", status_code=status.HTTP_201_CREATED)
+async def forget_password(request: ForgetPasswordRequest):
+    """
+    Sends a password reset email to the user.
+    """
+    try:
+        data = request.dict()
+
+        email = data["email"]
+
+        if not email:
+            return {"success": False, "message": "Email is required"}
+
+        await forgetPasswordHandler(email)
+
+        return {"success": True, "message": "Password reset email sent, if the email exists in our system, you will receive an email shortly."}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+@authRouter.post("/reset-password", status_code=status.HTTP_201_CREATED)
+async def reset_password(request: ResetPasswordRequest):
+    """
+    Resets a user's password.
+    """
+    try:
+        data = request.dict()
+
+        if not data["token"]:
+            return {"success": False, "message": "Token is required"}
+        
+        if not data["new_password"]:
+            return {"success": False, "message": "Password is required"}
+        
+        if not data["email"]:
+            return {"success": False, "message": "Email is required"}
+
+        response = await resetPasswordHandler(data)
+
+        return {"success": True, "message": response["message"]}
 
     except Exception as e:
         return {"success": False, "message": str(e)}
