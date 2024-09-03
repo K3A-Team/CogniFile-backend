@@ -11,7 +11,7 @@ from services.hashService import is_token_expired, generate_reset_token
 from services.SMTPService import send_reset_email
 from handlers.storageHandlers.foldersHandlers import createFolderHandler
 
-async def registerUserHandler(firstname : str, lastname : str, email : str, password : str):
+async def registerUserHandler(firstname : str, lastname : str, email : str, password : str, oauth = None, uid = None):
     """
     Registers a new user, creates a root folder for them, and returns their data with a JWT token.
 
@@ -29,13 +29,14 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
     """
     email = email.lower()
 
-    result = db.collection("users").where(
-        "email", "==", email).get()
+    if oauth is None:
+        result = db.collection("users").where(
+            "email", "==", email).get()
 
-    if len(result) > 0:
-        raise Exception("User already exists")
+        if len(result) > 0:
+            raise Exception("User already exists")
     
-    userId = str(uuid.uuid4())
+    userId = uid if oauth else str(uuid.uuid4())
 
     rootFolder = await createFolderHandler(userID=userId, folderName="/")
 
@@ -51,11 +52,12 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
         id=userId,
         firstName=firstname, 
         lastName=lastname, 
-        email=email, 
-        password=hashPassword(password),
+        email=email,
+        password= None if not password else hashPassword(password),
         rootFolderId=rootFolderId,
-        chatbotSessionId=chatbotSessionDict["id"]
-        )
+        chatbotSessionId=chatbotSessionDict["id"],
+        oauth=oauth
+    )
 
     userDict = user.to_dict()
 
@@ -71,7 +73,7 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
 
     return userDict
 
-async def loginUserHandler(email,password):
+async def loginUserHandler(email, password, oauth = None):
     """
     Authenticates a user by their email and password, and returns their data with a JWT token.
 
@@ -94,20 +96,28 @@ async def loginUserHandler(email,password):
         raise Exception("Email does not exist")
     user = result[0].to_dict()
 
-    if user["password"] == hashPassword(password):
-        del user["password"]
-
-        jwtToken = createJwtToken({"id": user["id"]})
-
-        del user["id"]
-
-        user["token"] = jwtToken
-
-        return user
-
+    if not user["oauth"]:
+        if user["password"] != hashPassword(password):    
+            raise Exception("Invalid credentials")
     else:
-        raise Exception("Invalid credentials")
-    
+        if not oauth:
+            if not user["password"]:
+                raise Exception("User registered with OAuth, to login using email kindly reset your password")
+            elif user["password"] != hashPassword(password):
+                raise Exception("Invalid credentials")
+        elif user["oauth"] != oauth:
+            raise Exception("User registered with different OAuth provider, kindly login with the same provider")
+
+    del user["password"]
+
+    jwtToken = createJwtToken({"id": user["id"]})
+
+    del user["id"]
+
+    user["token"] = jwtToken
+
+    return user
+
 async def forgetPasswordHandler(email):
     """
     Sends a password reset email to the user.
@@ -209,3 +219,36 @@ async def resetPasswordHandler(data):
     except Exception as e:
         print(e)
         raise e
+
+async def OAuthLoginHandler(user_info):
+    """
+    Authenticates a user by their OAuth provider and returns their data with a JWT token.
+
+    Args:
+        user_info (dict): The user's information from the OAuth provider.
+
+    Returns:
+        dict: The authenticated user's data, including a JWT token.
+
+    Raises:
+        Exception: If the user does not exist.
+    """
+    uid = str(user_info["id"]).lower()
+    user = None
+
+    result = db.collection("users").where(
+        "id", "==", uid).get()
+    
+    if len(result) == 0:
+        user = await registerUserHandler(
+            user_info["firstName"],
+            user_info["lastName"],
+            user_info["email"],
+            None,
+            user_info["oauth"],
+            uid
+        )
+    else:
+        user = await loginUserHandler(user_info["email"], None, user_info["oauth"])
+
+    return user
