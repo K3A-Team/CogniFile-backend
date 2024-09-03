@@ -5,5 +5,5 @@ limiter = Limiter(
     key_func=get_remote_address,
     auto_check=True,
     enabled=True,
-    default_limits=["25/minute"]
+    default_limits=["40/minute"]
 )

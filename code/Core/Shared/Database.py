@@ -1,4 +1,5 @@
 from typing import Dict, List
+from Models.Entities import PasswordResetTokens
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
@@ -163,11 +164,6 @@ class Database:
 
         return folder
 
-
-
-
-        
-    
     @staticmethod
     async def getUser(userID, attributes=None):
         return await Database.read("users", userID, attributes)
@@ -302,6 +298,15 @@ class Database:
                 return True
 
         return False
+    
+    @staticmethod
+    def getOrNullStoredToken(email):
+        stored_tokens = db.collection("password_reset_tokens").where(
+            "email", "==", email).get()
+        if len(stored_tokens) == 0:
+            return None
+        else:
+            return stored_tokens
     
     @staticmethod
     def setupRefs(cls: List[str]):
