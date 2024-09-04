@@ -1,4 +1,5 @@
 import hashlib
+import time
 from fastapi import HTTPException
 from Core.Shared.Database import Database , db
 
@@ -48,3 +49,12 @@ async def is_file_duplicate(file_hash: str, folderId: str) -> dict:
     last_duplicate = files[-1]
     
     return {"is_duplicate": True, "last_duplicate": last_duplicate}
+
+def generate_reset_token(user_email: str, random_value: str) -> str:
+    return hashlib.sha256((user_email + random_value).encode()).hexdigest()
+
+def is_token_expired(token_expiration):
+    current_time = int(time.time())
+    int_token_expiration = int(token_expiration)
+    
+    return (current_time > int_token_expiration)
