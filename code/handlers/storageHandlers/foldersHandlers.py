@@ -170,3 +170,55 @@ async def deleteFolderHandler(userId , fodlerId):
     return folder
 
 
+async def restoreFolderHandler(userId , folderId):
+    user = await Database.getUser(userId)
+    folder = await Database.getFolder(folderId)
+    rootFolder = await Database.getFolder(user["rootFolderId"])
+
+    if folder is None:
+        raise Exception("Folder does not exist")
+    
+    parentFolderId = folder["parent"]
+    if parentFolderId is None:
+        raise Exception("You cannot restore a root or trash folder")
+    
+    parentFolder = await Database.getFolder(parentFolderId)
+
+    folder["parent"] = rootFolder["id"]
+    rootFolder["subFolders"].append(folderId)
+    rootFolder["subFolders"] = list(set(rootFolder["subFolders"]))
+    # Delete the folder from the children of the parent
+    parentFolder["subFolders"].remove(folderId)
+
+    await Database.edit("folders", folderId, folder)
+    await Database.edit("folders", parentFolderId, parentFolder)
+    await Database.edit("folders", user["rootFolderId"], rootFolder)
+
+    return parentFolder
+
+async def restoreFileHandler(userID:str,fileId: str):
+    '''
+    
+    '''
+    file = await Database.getFile(fileId)
+    user = await Database.getUser(userID)
+    if file is None:
+        raise Exception("File does not exist")
+    if ((userID != file["ownerId"])):
+        raise Exception("You are not allowed to upload a file in this directory")
+    folder = file["folder"]
+    folder = await Database.getFolder(folder)
+    folder["files"].remove(fileId)
+
+    rootFolder = await Database.getFolder(user["rootFolderId"])
+    
+    rootFolder["files"].append(fileId)
+    # remove all duplicates from the root folder files
+    rootFolder["files"] = list(set(rootFolder["files"]))
+
+    file["folder"] = user["rootFolderId"]
+    await Database.edit("folders", folder["id"], folder)
+    await Database.edit("folders", user["rootFolderId"], rootFolder)
+    file = await Database.edit("files", file["id"], file)
+
+    return folder

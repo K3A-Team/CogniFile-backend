@@ -8,6 +8,7 @@ from Routers.foldersRouter import foldersRouter
 from Routers.filesRouter import filesRouter
 from handlers.storageHandlers.storageHandlers import get_shared_content_handler
 from handlers.storageHandlers.storageHandlers import getRecentElementsHandler , removeTrashHandler
+from handlers.storageHandlers.foldersHandlers import restoreFileHandler , restoreFolderHandler
 
 # Create a new APIRouter instance for storage-related routes
 storageRouter = APIRouter()
@@ -47,7 +48,34 @@ async def deleteTrash(userID: str = Depends(LoginProtected)):
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+
+@storageRouter.get("/restore/file/{fileId}", status_code=status.HTTP_200_OK)
+async def restoreFile(fileId: str, userID: str = Depends(LoginProtected)):
+    """
+    Restores the specified file.
+    """
+    try:
+
+        folderDict = await restoreFileHandler(userID=userID, fileId=fileId)
+
+        return {"success": True, "folder": folderDict}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
     
+@storageRouter.get("/restore/folder/{folderId}", status_code=status.HTTP_200_OK)
+async def restoreFolder(folderId: str, userID: str = Depends(LoginProtected)):
+    """
+    Restores the specified folder.
+    """
+    try:
+
+        folderDict = await restoreFolderHandler(userId=userID, folderId=folderId)
+
+        return {"success": True, "folder": folderDict}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
 
 
 # Nest foldersRouter and filesRouter inside storageRouter
