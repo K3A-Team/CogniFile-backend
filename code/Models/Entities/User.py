@@ -30,6 +30,6 @@ class User:
             "chatbotSessionId" : self.chatbotSessionId,
             "trial" : self.trial, #can be basic, standard or premium!
             "usedSpace" : self.usedSpace,
-            "trashFolderId" : self.trashFolderId
-            "oauth" : self.oauth,
+            "trashFolderId" : self.trashFolderId,
+            "oauth" : self.oauth
         }
