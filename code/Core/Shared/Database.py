@@ -92,7 +92,7 @@ class Database:
         return result[0].to_dict()
     
     async def getFilesByHashAndFolderId(hash: str, folderId: str):
-        result = db.collection("file_hashes").where("hash", "==", hash.lower()).where("folderId", "==", folderId).order_by("uploaded_at").get()
+        result = db.collection("files").where("hash", "==", hash.lower()).where("folder", "==", folderId).order_by("interactionDate").get()
         return [file.to_dict() for file in result]
     
     @staticmethod
@@ -121,7 +121,8 @@ class Database:
                 {
                     'name': file.get('name'),
                     'size': file.get('size'),
-                    'url': file.get('url')
+                    'url': file.get('url'),
+                    'id': file.get('id'),
                 }
                 for file in files
             ]

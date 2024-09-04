@@ -72,6 +72,7 @@ async def getFolderHandler(userID: str, folderID: str):
         Exception: If the user does not have read or write permissions for the folder.
     """
     folder = await Database.getFodlerFormatted(folderID)
+
     db.collection("folders").document(folderID).update({
         "interactionDate": datetime.datetime.now().isoformat()
     })
@@ -144,7 +145,12 @@ async def searchContentInFolderRecursive(folderID: str, searchTerm: str, userID:
 async def deleteFolderHandler(userId , fodlerId):
     user = await Database.getUser(userId)
     folder = await Database.getFolder(fodlerId)
+
+    if folder is None:
+        raise Exception("Folder does not exist")
     parentFolderId = folder["parent"]
+    if parentFolderId is None:
+        raise Exception("You cannot delete a root or trash folder")
     parentFolder = await Database.getFolder(parentFolderId)
 
     if folder["ownerId"] != userId and userId not in folder["writeId"]:
@@ -162,5 +168,5 @@ async def deleteFolderHandler(userId , fodlerId):
     await Database.edit("folders", parentFolderId, parentFolder)
 
     return folder
-    
-    
+
+

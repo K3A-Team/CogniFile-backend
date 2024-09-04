@@ -7,7 +7,7 @@ from Middlewares.authProtectionMiddlewares import LoginProtected
 from Routers.foldersRouter import foldersRouter
 from Routers.filesRouter import filesRouter
 from handlers.storageHandlers.storageHandlers import get_shared_content_handler
-from handlers.storageHandlers.storageHandlers import getRecentElementsHandler
+from handlers.storageHandlers.storageHandlers import getRecentElementsHandler , removeTrashHandler
 
 # Create a new APIRouter instance for storage-related routes
 storageRouter = APIRouter()
@@ -32,6 +32,18 @@ def getRecentElements(userID: str = Depends(LoginProtected)):
     try:
         result = getRecentElementsHandler(userID)
         return {"success": True, "result": result}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+    
+@storageRouter.delete("/trash")
+async def deleteTrash(userID: str = Depends(LoginProtected)):
+    """
+    Deletes all the files and folders in the trash.
+    """
+    try:
+        trash = await removeTrashHandler(userID)
+        return {"success": True, "trash": trash}
 
     except Exception as e:
         return {"success": False, "message": str(e)}

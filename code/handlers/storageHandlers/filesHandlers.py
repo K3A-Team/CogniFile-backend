@@ -88,20 +88,12 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
 
 
 
-    hashObj = FileHash(
-        filename=name,
-        hash=file_hash,
-        ownerId=userID,
-        folderId=folderId,
-        uploaded_at=firestore.SERVER_TIMESTAMP
-    )
-
     if (await isMalicious ):
         tags.append("malicious")
 
-    url = await storeInStorageHandler(file)
+    url , storageFileId = await storeInStorageHandler(file)
 
-    await Database.store("file_hashes", hashObj.id, hashObj.to_dict())
+
 
     
     readId = parentFolder["readId"]
@@ -113,13 +105,15 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     fileObj = StorageFile(
         name=name,
         ownerId=userID,
+        storageFileId = storageFileId,
         folder=folderId,
         readId=readId,
         writeId=writeId,
         url=url,
         size=get_readable_file_size(file_size),
         tags=tags,
-        interactionDate=datetime.datetime.now().isoformat()
+        interactionDate=datetime.datetime.now().isoformat(),
+        hash=file_hash
     )
 
     ai_generated_tags = await process_and_upsert_service(file=file,name=name,file_id=fileObj.id,url=url,userID=userID,saved_name=saved_name)
@@ -158,3 +152,48 @@ async def getFileHandler(userID:str, fileID: str):
         raise Exception("You are not allowed to access this directory")
     else:
         return file
+    
+async def deleteFileHandler(userID:str, fileID: str):
+    """
+    Deletes a file if the user has write permissions.
+
+    Args:
+        userID (str): The ID of the user deleting the file.
+        fileID (str): The ID of the file to be deleted.
+
+    Returns:
+        dict: The deleted file's data.
+
+    Raises:
+        Exception: If the user does not have write permissions for the file.
+    """
+    file = await Database.getFile(fileID=fileID)
+    if file is None:
+        raise Exception("File does not exist")
+    user = await Database.getUser(userID)
+    trashFolderId = user["trashFolderId"]
+    parentFolderId = file["folder"]
+    if (userID != file["ownerId"]):
+        raise Exception("You are not allowed to delete this file")
+    
+
+    # Change the fodler of the file
+    file['folder'] = trashFolderId
+    file['interactionDate'] = datetime.datetime.now().isoformat()
+    await Database.edit("files", fileID, file)
+
+
+    # change the parent folder of the file
+    parentFolder = await Database.getFolder(parentFolderId)
+    parentFolder["files"].remove(fileID)
+    parentFolder["interactionDate"] = datetime.datetime.now().isoformat()
+    await Database.edit("folders", parentFolderId, parentFolder)
+
+
+    # change the trash folder
+    trashFolder = await Database.getFolder(trashFolderId)
+    trashFolder["files"].append(fileID)
+    trashFolder["interactionDate"] = datetime.datetime.now().isoformat()
+    await Database.edit("folders", trashFolderId, trashFolder)
+    
+    return file

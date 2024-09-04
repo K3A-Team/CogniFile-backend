@@ -3,7 +3,8 @@ from firebase_admin import firestore
 from Models.Entities.Folder import Folder
 from Models.Entities.StorageFile import StorageFile
 from typing import List
-
+from Core.Shared.Storage import Storage
+from datetime import datetime
 
 def get_shared_content_handler(searchQuery: str, userID: str):
     """
@@ -148,42 +149,71 @@ async def removeTrashHandler(userId: str):
     """
     Removes all files and folders in the Trash folder of the user.
     """
-    try:
-        user =await Database.getUser(userId)
-        # Get the Trash folder of the user
-        folder = await Folder.loadWithId(user.trashFolderId)
-        # Delete all files and folders in the Trash folder
-        batch = db.batch()
 
-        # Recursively delete all files and folders in the Trash folder
-        for subfolder in folder.getSubfolders():
-            delete_folder_recursively(subfolder, batch)
-        for file_id in folder.files:
-            batch.delete(db.collection('files').document(file_id))
-
-        # Commit the batched writes
-        batch.commit()
+    user =await Database.getUser(userId)
+    # Get the Trash folder of the user
+    folder = Folder.loadWithId(user['trashFolderId'])
 
 
-        return {
-            'success': True
-        }
 
-    except Exception as e:
-        raise Exception(str(e))
+    
+
+    fileIds = []
+    storageFileIds = []
+        
+
+    # Delete all files and folders in the Trash folder
+    batch = db.batch()
+
+    # Recursively delete all files and folders in the Trash folder
+    for subfolder in folder.getSubfolders():
+        delete_folder_recursively(folder=subfolder, batch=batch , storageFileIds=fileIds)
+    for file_id in folder.files:
+            ref = db.collection('files').document(file_id)
+            fileIds.append(file_id)
+            batch.delete(ref)
+    print(fileIds)
+    storageFileIdsRef = db.collection('files').where('id', 'in', fileIds)
+    storageFileIds = [doc.to_dict()['storageFileId'] for doc in storageFileIdsRef.stream()]
+    print(storageFileIds)
+    # Commit the batched writes
+    folder.files = []
+    folder.subFolders = []
+    folder.interactionDate = datetime.now().isoformat()
+
+    folderDict = folder.to_dict()
+    trashRef = db.collection('folders').document(folder.id)
+    batch.update(trashRef , folderDict)
+    batch.commit()
+
+
+
+    for storageFileId in storageFileIds:
+        Storage.delete(storageFileId)
+
+
+
+    return folderDict
+
+
+    
+
+
 
 
 
 MAX_DEPTH = 50
-def delete_folder_recursively(folder: Folder, batch, depth: int = 0):
+def delete_folder_recursively(folder: Folder, batch, storageFileIds , depth: int = 0):
         if depth > MAX_DEPTH:
             print(f"Warning: Maximum depth reached while deleting folder {folder.id}")
             return
 
         for subfolder in folder.getSubfolders():
-            delete_folder_recursively(subfolder, batch, depth + 1)
+            delete_folder_recursively(subfolder=subfolder, batch=batch , storageFileIds=storageFileIds, depth=depth + 1)
         
         for file_id in folder.files:
-            batch.delete(db.collection('files').document(file_id))
+            ref = db.collection('files').document(file_id)
+            storageFileIds.append(file_id)
+            batch.delete(ref)
         
         batch.delete(db.collection('folders').document(folder.id))
