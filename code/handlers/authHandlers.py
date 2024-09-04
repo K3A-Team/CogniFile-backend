@@ -6,10 +6,12 @@ from Core.Shared.Security import *
 import uuid
 from Models.Entities.User import User
 from Models.Entities.ChatBotSession import ChatBotSession
+from handlers.storageHandlers.foldersHandlers import createFolderHandler , createTrashFolderHandler
 from Models.Entities.PasswordResetTokens import PasswordResetTokens
 from services.hashService import is_token_expired, generate_reset_token
 from services.SMTPService import send_reset_email
 from handlers.storageHandlers.foldersHandlers import createFolderHandler
+
 
 async def registerUserHandler(firstname : str, lastname : str, email : str, password : str, oauth = None, uid = None):
     """
@@ -40,6 +42,8 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
 
     rootFolder = await createFolderHandler(userID=userId, folderName="/")
 
+    TrashFolderId = await createTrashFolderHandler(userID=userId)
+
     rootFolderId = rootFolder["id"]
     
     chatbotSession = ChatBotSession() 
@@ -56,6 +60,7 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
         password= None if not password else hashPassword(password),
         rootFolderId=rootFolderId,
         chatbotSessionId=chatbotSessionDict["id"],
+        trashFolderId=TrashFolderId,
         oauth=oauth
     )
 

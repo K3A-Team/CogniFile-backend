@@ -85,7 +85,7 @@ class Folder:
             "interactionDate": self.interactionDate
         }
 
-    def createSubFolder(self, name: str) -> str:
+    def createSubFolder(self, name: str , id=None) -> str:
         """
         Creates a subfolder within the current folder.
 

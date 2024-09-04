@@ -31,6 +31,8 @@ class Storage:
         """
         blob = db.blob(filename)
         blob.metadata = {"firebaseStorageDownloadTokens": str(uuid.uuid4())}
+
+
         
         blob.upload_from_file(file)
         download_url = blob.public_url

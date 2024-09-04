@@ -8,8 +8,8 @@ from fastapi import UploadFile
 from fastapi import File
 from dotenv import load_dotenv
 from Models.Requests.FolderRequestsModels import CreateFolderRequest
-from handlers.storageHandlers.foldersHandlers import createFolderHandler , getFolderHandler
-from handlers.storageHandlers.filesHandlers import createFileHandler 
+from handlers.storageHandlers.foldersHandlers import createFolderHandler , getFolderHandler ,deleteFolderHandler , restoreFolderHandler , restoreFileHandler
+from handlers.storageHandlers.filesHandlers import createFileHandler , deleteFileHandler
 
 load_dotenv()
 
@@ -48,6 +48,21 @@ async def getFolder(folderId : str, userID: str = Depends(LoginProtected)):
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+    
+@foldersRouter.delete("/{folderId}", status_code=status.HTTP_200_OK)
+async def removeFolder(folderId : str, userID: str = Depends(LoginProtected)):
+    """
+    Removes the specified folder; the logic is handled inside the handler.
+    """
+    try:
+
+        folderDict = await deleteFolderHandler(userId=userID, fodlerId=folderId)
+
+        return {"success": True, "folder": folderDict}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+    
 
 @foldersRouter.post("/{folderId}/file", status_code=status.HTTP_201_CREATED)
 async def createFile(
@@ -66,3 +81,4 @@ async def createFile(
 
     except Exception as e:
         return {"success": False, "message": str(e)}
+    
