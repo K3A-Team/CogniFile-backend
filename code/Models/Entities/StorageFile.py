@@ -12,7 +12,9 @@ class StorageFile:
             ownerId: str, 
             size: str,
             url : str,
+            storageFileId : str,
             id : str = None,
+            hash : str = None,
             tags: List[str] = [],
             readId : List[str] = [], 
             writeId : List[str] = [],
@@ -28,6 +30,8 @@ class StorageFile:
         self.interactionDate = interactionDate or datetime.datetime.now().isoformat()
         self.tags = tags
         self.url = url
+        self.storageFileId = storageFileId
+        self.hash = hash
 
     def to_dict(self) -> dict:
         return {
@@ -40,5 +44,7 @@ class StorageFile:
             "readId": self.readId,
             "writeId": self.writeId,
             "url": self.url,
-            "interactionDate": self.interactionDate
+            "interactionDate": self.interactionDate,
+            "storageFileId": self.storageFileId,
+            "hash": self.hash
         }

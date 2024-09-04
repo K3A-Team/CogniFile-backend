@@ -78,7 +78,7 @@ async def storeInStorageHandler(file: UploadFile = File(...)):
         file.file.seek(0)
         
         file.file.seek(0)
-        return url
+        return url , fileID
     
 
 privilege_error = HTTPException(

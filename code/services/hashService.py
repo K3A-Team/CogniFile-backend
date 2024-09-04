@@ -1,7 +1,7 @@
 import hashlib
 import time
 from fastapi import HTTPException
-from Core.Shared.Database import Database
+from Core.Shared.Database import Database , db
 
 def generate_file_hash(file_content: bytes) -> str:
     """
