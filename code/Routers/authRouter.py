@@ -95,14 +95,11 @@ async def reset_password(request: ResetPasswordRequest):
     try:
         data = request.dict()
 
-        if not data["token"]:
-            return {"success": False, "message": "Token is required"}
-        
+        if not data["token"] or not data["email"]:
+            return {"success": False, "message": "Invalid reset link"}
+
         if not data["new_password"]:
             return {"success": False, "message": "Password is required"}
-        
-        if not data["email"]:
-            return {"success": False, "message": "Email is required"}
 
         response = await resetPasswordHandler(data)
 
