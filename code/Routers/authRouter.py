@@ -171,7 +171,7 @@ async def google_callback(code: str):
 
         return RedirectResponse(url=f"{os.getenv('OAUTH_SUCCESS_REDIRECT_URL')}?error={e}")
 
-@authRouter.get("/oauth/{session_id}", status_code=status.HTTP_200_OK)
+@authRouter.get("/oauth/{session_id}", status_code=status.HTTP_200_OK, include_in_schema=False)
 async def get_current_user_session(session_id: str):
     """
     Returns the user oauth protected session details.
