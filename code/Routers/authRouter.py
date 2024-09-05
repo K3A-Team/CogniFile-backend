@@ -1,4 +1,3 @@
-from httpx import AsyncClient
 from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from Models.Requests.AuthRequestsModels import RegisterRequest, LoginRequest, ResetPasswordRequest, ForgetPasswordRequest
@@ -6,8 +5,9 @@ from starlette.responses import JSONResponse
 from Core.Shared.ErrorResponses import *
 from Middlewares.authProtectionMiddlewares import *
 from Core.Shared.Security import *
+from Core.Shared.Database import Database
 from services.SMTPService import send_welcome_email
-from services.oAuthService import get_github_user_info, get_google_user_info
+from services.oAuthService import generate_server_session, get_github_user_info, get_google_user_info
 from handlers.authHandlers import OAuthLoginHandler, registerUserHandler , loginUserHandler, forgetPasswordHandler, resetPasswordHandler
 
 authRouter = APIRouter()
@@ -127,25 +127,17 @@ async def github_callback(code: str):
             return {"success": False, "message": "Failed to get user info from Github, try again later."}
         
         user = await OAuthLoginHandler(user_info)
-        
+
         jwtToken = user["token"]
         del user["token"]
 
-        response = JSONResponse(
-            content={"success": True, "user": user, "token": jwtToken},
-            headers={"Authorization": f"Bearer {jwtToken}"},
-        )
+        server_session_id = await generate_server_session(jwtToken, user["id"])
 
-        response.set_cookie(
-            key="Authorization",
-            value=jwtToken,
-            httponly=True
-        )
-        
-        return response
+        return RedirectResponse(url=f"{os.getenv('OAUTH_SUCCESS_REDIRECT_URL')}?token={server_session_id}")
 
     except Exception as e:
-        return {"success": False, "message": str(e)}
+
+        return RedirectResponse(url=f"{os.getenv('OAUTH_SUCCESS_REDIRECT_URL')}?error={e}")
 
 @authRouter.get("/google")
 def google_auth():
@@ -171,17 +163,39 @@ async def google_callback(code: str):
         jwtToken = user["token"]
         del user["token"]
 
+        server_session_id = await generate_server_session(jwtToken, user["id"])
+        
+        return RedirectResponse(url=f"{os.getenv('OAUTH_SUCCESS_REDIRECT_URL')}?token={server_session_id}")
+
+    except Exception as e:
+
+        return RedirectResponse(url=f"{os.getenv('OAUTH_SUCCESS_REDIRECT_URL')}?error={e}")
+
+@authRouter.get("/oauth/{session_id}", status_code=status.HTTP_200_OK)
+async def get_current_user_session(session_id: str):
+    """
+    Returns the user oauth protected session details.
+    """
+    try:
+
+        if not session_id:
+            raise Exception("Session ID is required")
+        
+        session_content = Database.getOrNullStoredOauthSession(session_id)
+
+        if not session_content:
+            raise Exception("Invalid session ID")
+        
+        user = session_content["uid"]
+        token =  session_content["token"]
+
+        await Database.delete("oauth_session_tokens", session_id)
+
         response = JSONResponse(
-            content={"success": True, "user": user, "token": jwtToken},
-            headers={"Authorization": f"Bearer {jwtToken}"},
+            content={"success": True, "user": user, "token": token},
+            headers={"Authorization": f"Bearer {token}"},
         )
 
-        response.set_cookie(
-            key="Authorization",
-            value=jwtToken,
-            httponly=True
-        )
-        
         return response
 
     except Exception as e:

@@ -25,6 +25,7 @@ credentials_exception = HTTPException(
 def LoginProtected(credentials: HTTPAuthorizationCredentials = Depends(http_bearer_scheme)):
     try:
         creds = credentials.credentials
+        print(creds)
         splitter = creds.split(SSRF_SECRET_SPLITER)[1]
 
         if (splitter == SSRF_SECRET_KEY):
@@ -39,5 +40,4 @@ def LoginProtected(credentials: HTTPAuthorizationCredentials = Depends(http_bear
     except HTTPException as e:
         raise e
     except Exception:
-        print("credentials exception")
         raise credentials_exception

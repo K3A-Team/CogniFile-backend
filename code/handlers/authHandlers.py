@@ -22,6 +22,8 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
         lastname (str): The last name of the user.
         email (str): The email of the user.
         password (str): The password of the user.
+        oauth (str): The OAuth provider of the user //needed only for auth proccess via OAuth.
+        uid (str): The unique identifier of the user //needed only for auth proccess via OAuth.
 
     Returns:
         dict: The registered user's data, including a JWT token.
@@ -72,7 +74,8 @@ async def registerUserHandler(firstname : str, lastname : str, email : str, pass
 
     jwtToken = createJwtToken({"id": userDict["id"]})
 
-    del userDict["id"]
+    if oauth is None:
+        del userDict["id"]
 
     userDict["token"] = jwtToken
 
@@ -85,6 +88,7 @@ async def loginUserHandler(email, password, oauth = None):
     Args:
         email (str): The email of the user.
         password (str): The password of the user.
+        oauth (str): The OAuth provider of the user //needed only for auth proccess via OAuth.
 
     Returns:
         dict: The authenticated user's data, including a JWT token.
@@ -117,7 +121,8 @@ async def loginUserHandler(email, password, oauth = None):
 
     jwtToken = createJwtToken({"id": user["id"]})
 
-    del user["id"]
+    if not user["oauth"]:
+        del user["id"]
 
     user["token"] = jwtToken
 
@@ -222,7 +227,6 @@ async def resetPasswordHandler(data):
         }
 
     except Exception as e:
-        print(e)
         raise e
 
 async def OAuthLoginHandler(user_info):
@@ -238,22 +242,25 @@ async def OAuthLoginHandler(user_info):
     Raises:
         Exception: If the user does not exist.
     """
-    uid = str(user_info["id"]).lower()
-    user = None
+    try:
+        uid = str(user_info["id"]).lower()
+        user = None
 
-    result = db.collection("users").where(
-        "id", "==", uid).get()
-    
-    if len(result) == 0:
-        user = await registerUserHandler(
-            user_info["firstName"],
-            user_info["lastName"],
-            user_info["email"],
-            None,
-            user_info["oauth"],
-            uid
-        )
-    else:
-        user = await loginUserHandler(user_info["email"], None, user_info["oauth"])
+        result = db.collection("users").where(
+            "id", "==", uid).get()
+        
+        if len(result) == 0:
+            user = await registerUserHandler(
+                user_info["firstName"],
+                user_info["lastName"],
+                user_info["email"],
+                None,
+                user_info["oauth"],
+                uid
+            )
+        else:
+            user = await loginUserHandler(user_info["email"], None, user_info["oauth"])
 
-    return user
+        return user
+    except Exception as e:
+        raise e
