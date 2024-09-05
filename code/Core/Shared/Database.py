@@ -1,5 +1,4 @@
 from typing import Dict, List
-from Models.Entities import PasswordResetTokens
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
@@ -210,8 +209,6 @@ class Database:
             "writeId": wUsersDetails
         }
     
-    
-    
     @staticmethod
     async def searchSubFoldersInFolder(folderID, searchTerm):
         folder = await Database.read("folders", folderID)
@@ -246,7 +243,6 @@ class Database:
     async def deleteFile(fileID):
         return await Database.delete("files", fileID)
     
-        
     @staticmethod
     async def createChatbotSession(sessionId , sessionDict):
         return await Database.store("chatbotSession",sessionId,sessionDict)
@@ -309,6 +305,34 @@ class Database:
         else:
             return stored_tokens
     
+    @staticmethod 
+    def getOrNullStoredOauthSession(id: str):
+        stored_session = db.collection("oauth_session_tokens").where(
+            "id", "==", id).get()
+        
+        if len(stored_session) == 0:
+            return None
+        else:
+            session_dict = stored_session[0].to_dict()
+
+            user_id = session_dict['uid']
+            
+            if user_id:
+                user_doc = db.collection("users").document(user_id).get()
+                if user_doc.exists:
+                    user_item = user_doc.to_dict()
+                    
+                    del user_item['password']
+                    del user_item['id']
+
+                    session_dict['uid'] = user_item
+                else:
+                    session_dict['uid'] = None
+            else:
+                session_dict['uid'] = None
+
+            return session_dict
+
     @staticmethod
     def setupRefs(cls: List[str]):
         if not cls:

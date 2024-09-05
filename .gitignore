@@ -6,6 +6,8 @@ __pycache__
 ## Environment Variables
 server-env
 .env
+.env.prod
+
 /env
 
 ## Temporary Files

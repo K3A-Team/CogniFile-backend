@@ -1,5 +1,8 @@
 from httpx import AsyncClient
 import os
+from Core.Shared.Database import Database
+from Models.Entities.OAuthSessionTokens import OAuthSessionTokens
+from services.hashService import generate_hash
 
 async def get_github_user_info(code: str):
     """
@@ -114,5 +117,39 @@ async def get_google_user_info(code: str):
     
         return user
     
+    except Exception as e:
+        raise e
+
+async def generate_server_session(token: str, uid: str):
+    """
+    Generates a unique session ID with oauth session details to prevent security issues.
+
+    Returns:
+        id: session ID for the server;
+        token: The generated session token for user oauthed.
+        uid: The user's ID.
+    """
+    try:
+        if not token:
+            raise Exception("Token is required")
+        
+        if not uid:
+            raise Exception("User ID is required")
+        
+        generated_session = OAuthSessionTokens(
+            token=token,
+            uid=uid
+        )
+
+        gsDict = generated_session.to_dict()
+
+        hashID = generate_hash(gsDict["id"])
+        
+        gsDict["id"] = hashID
+
+        await Database.store("oauth_session_tokens", hashID, gsDict)
+
+        return hashID
+
     except Exception as e:
         raise e

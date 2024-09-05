@@ -50,6 +50,9 @@ async def is_file_duplicate(file_hash: str, folderId: str) -> dict:
     
     return {"is_duplicate": True, "last_duplicate": last_duplicate}
 
+def generate_hash(value: str) -> str:
+    return hashlib.sha256(value.encode()).hexdigest()
+
 def generate_reset_token(user_email: str, random_value: str) -> str:
     return hashlib.sha256((user_email + random_value).encode()).hexdigest()
 
