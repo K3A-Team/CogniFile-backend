@@ -22,3 +22,6 @@ test.py
 
 ## SSL Certificates and stuff
 data
+
+## htpasswd
+.htpasswd
