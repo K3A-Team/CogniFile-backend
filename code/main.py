@@ -4,6 +4,7 @@ from Routers.storageRouter import storageRouter
 from Routers.userRouter import userRouter
 from Routers.searchRouter import searchRouter
 from Routers.fileHierarchyRouter import fileHierarchyRouter
+from Routers.paymentRouter import paymentRouter
 from Routers.chatbotRouter import chatbotRouter
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
@@ -41,6 +42,8 @@ app.include_router(userRouter, tags=["user"], prefix="/user")
 app.include_router(searchRouter,tags=["search"], prefix="/search" )
 
 app.include_router(fileHierarchyRouter,tags=["hierarchy"], prefix="/hierarchy")
+
+app.include_router(paymentRouter,tags=["payment"], prefix="/payment")
 
 app.include_router(chatbotRouter,tags=["chatbot"], prefix="/chatbot")
 

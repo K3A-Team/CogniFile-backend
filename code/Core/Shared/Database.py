@@ -348,3 +348,13 @@ class Database:
                 refs[collection] = db.collection("users")
         
         return refs
+
+    @staticmethod
+    async def createTrialSubscription(subscription):
+        subscriptionDict = subscription.to_dict()
+        await Database.store("subscriptions", subscription.id, subscriptionDict)
+        return subscriptionDict
+    
+    @staticmethod
+    async def updateUser(userID, userDict):
+        return await Database.edit("users", userID, userDict)
