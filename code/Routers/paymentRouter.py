@@ -1,3 +1,4 @@
+import datetime
 import os
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -54,7 +55,7 @@ async def stripe_webhook(request: Request):
                 amount=amount_paid, 
                 uid=uid, 
                 trial=trial,
-                payment_intent= payment_intent,
+                payment_intent= payment_intent
             )
 
             trialDict = await Database.createTrialSubscription(trial_subscription)

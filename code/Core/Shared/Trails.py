@@ -1,14 +1,14 @@
 TRIALS = {
     "basic": {
-        "days": 7,
-        "price": 0 # Free
+        "days": 30,
+        "price": 999  # $9.99
     },
     "premium": {
-        "days": 14,
-        "price": 1500 # $15.00
+        "days": 30,
+        "price": 2499 # $24.99
     },
     "pro": {
         "days": 30,
-        "price": 3000 # $30.00
+        "price": 4999 # $49.99
     }
 }
