@@ -1,5 +1,9 @@
 TRIALS = {
     "basic": {
+        "days": -1,
+        "price": 0  # $0.00
+    },
+    "basic": {
         "days": 30,
         "price": 999  # $9.99
     },

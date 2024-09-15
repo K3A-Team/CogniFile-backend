@@ -1,4 +1,3 @@
-import datetime
 import os
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -59,9 +58,19 @@ async def stripe_webhook(request: Request):
             )
 
             trialDict = await Database.createTrialSubscription(trial_subscription)
-            await Database.updateUser(uid, {"trial": trialDict["trial"]})
+            await Database.updateUser(uid, {"trial": trialDict["trial"], "subscriptionID": trialDict["id"]})
 
-        return { "success": True, "message": "Payment success!" }
+        elif event['type'] == 'customer.subscription.updated':
+            payment_intent = event['data']['object']
+            status = payment_intent['status']
+            uid = payment_intent['metadata']['uid']
+
+            if status == 'canceled' or status == 'incomplete_expired':
+                user = await Database.getUser(uid)
+                await Database.updateTrialSubscription(user["subscriptionID"], {"active": False})
+                await Database.updateUser(uid, {"trial": "free", "subscriptionID": None})
+
+        return {"success": True, "message": "Event handled successfully!"}
     
     except Exception as e:
         return {"success": False, "message": str(e)}

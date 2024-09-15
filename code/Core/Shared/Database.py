@@ -358,3 +358,7 @@ class Database:
     @staticmethod
     async def updateUser(userID, userDict):
         return await Database.edit("users", userID, userDict)
+    
+    @staticmethod
+    async def updateTrialSubscription(subID, subDict):
+        return await Database.edit("users", subID, subDict)
