@@ -154,10 +154,6 @@ async def removeTrashHandler(userId: str):
     # Get the Trash folder of the user
     folder = Folder.loadWithId(user['trashFolderId'])
 
-
-
-    
-
     fileIds = []
     storageFileIds = []
         
@@ -173,10 +169,6 @@ async def removeTrashHandler(userId: str):
             fileIds.append(file_id)
             batch.delete(ref)
     print(fileIds)
-    storageFileIdsRef = db.collection('files').where('id', 'in', fileIds)
-    storageFileIds = [doc.to_dict()['storageFileId'] for doc in storageFileIdsRef.stream()]
-    print(storageFileIds)
-    # Commit the batched writes
     folder.files = []
     folder.subFolders = []
     folder.interactionDate = datetime.now().isoformat()
@@ -184,12 +176,17 @@ async def removeTrashHandler(userId: str):
     folderDict = folder.to_dict()
     trashRef = db.collection('folders').document(folder.id)
     batch.update(trashRef , folderDict)
+
     batch.commit()
 
 
-
-    for storageFileId in storageFileIds:
-        Storage.delete(storageFileId)
+    if fileIds:
+        storageFileIdsRef = db.collection('files').where('id', 'in', fileIds)
+        storageFileIds = [doc.to_dict()['storageFileId'] for doc in storageFileIdsRef.stream()]
+        print(storageFileIds)
+        # Commit the batched writes
+        for storageFileId in storageFileIds:
+            Storage.delete(storageFileId)
 
 
 

@@ -1,4 +1,4 @@
-import os,io,ast
+import os,io,ast,json
 from pinecone import Pinecone
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from fastapi import UploadFile
@@ -16,25 +16,30 @@ TAGS_GENERATION_CHUNKS = 10
 MODEL_TEMP = 0.0
 SUPPORTED_EXTENSIONS = ['.csv','.xlsx','.docx','.pdf','.txt']
 
-TAGS_GENERATION_PROMPT = '''You are an expert tagger and content analyzer. Your task is to generate an array of 3 relevant tags for the following text, which has been extracted from a file.
-File details:
+TAGS_GENERATION_PROMPT = '''You are an expert tagger and content analyzer. Your task is to generate an array of 3 relevant tags and a concise description for the following text, which has been extracted from a file.
 
+File details:
 File name: {file_name}
 File extension: {file_extension}
 Extracted content: {extracted_content}
 
-Based on the file type and the content provided, generate an array of 3 strings containing tags that accurately describe the main topics, themes, technologies, concepts, and key elements present in the text. The tags should be concise, relevant, and helpful for categorizing and searching for this content.
-Consider the following aspects when generating tags:
+Based on the file type,name and content provided, perform the following tasks:
 
-* The file type and its typical use cases
-* Main subjects or topics discussed
-* Key concepts or ideas presented
-* Relevant industries or domains
-* General themes or categories that apply to the content
+1. Generate an array of 3 strings containing tags that accurately describe the main topics, themes, technologies, concepts, and key elements present in the text. The tags should be concise, relevant, and helpful for categorizing and searching for this content. Consider the following aspects when generating tags:
+   * The file type and its typical use cases
+   * Main subjects or topics discussed
+   * Key concepts or ideas presented
+   * Relevant industries or domains
+   * General themes or categories that apply to the content
 
-Provide your response as a Python-style array of strings, with each of the 3 tag enclosed in quotes and separated by commas. For example:
-["Tag1", "Tag2", "Tag3"]
-Ensure that the 3 tags are diverse and cover various aspects of the content, but remain relevant and accurate.'''
+2. Create a brief description (2-3 sentences) that summarizes the main content, purpose, or key points of the file and it's content. This description should provide a quick overview of what the file is about.
+Provide your response as a JSON object with the following structure: 
+{{
+    "tags": ["Tag1", "Tag2", "Tag3"],
+    "description": "Description of the content..."
+}}
+
+Ensure that the 3 tags are diverse and cover various aspects of the content, but remain relevant and accurate. The description should be concise yet informative, capturing the essence of the file's content. '''
 
 TAGS_GENERATION_PROMPT_TEMPLATE = ChatPromptTemplate.from_template(TAGS_GENERATION_PROMPT)
 
@@ -237,7 +242,7 @@ def combine_metadata_and_content(row,page_content):
     combined[page_content] = row.page_content
     return combined
 
-async def generate_tags(name,content,extension):
+async def generate_infos(name,content,extension):
     """
     Asynchronously generates tags for a given file content using the Gemini AI model.
 
@@ -255,16 +260,18 @@ async def generate_tags(name,content,extension):
     """
     # Building and sending the prompt
     llm_prompt = TAGS_GENERATION_PROMPT_TEMPLATE.format_messages(
-        file_name = name,
-        file_extension = extension,
-        extracted_content = content
+        file_name=name,
+        file_extension=extension,
+        extracted_content=content
     )
     llm_result = await gemini_model.ainvoke(llm_prompt)
     # Extracting the tags
-    array_start = llm_result.content.index('[')
-    array_end = llm_result.content.rindex(']') + 1
-    tags = ast.literal_eval(llm_result.content[array_start:array_end])
-    return tags
+    json_start = llm_result.content.index('{')
+    json_end = llm_result.content.rindex('}') + 1
+    result_json = json.loads(llm_result.content[json_start:json_end])
+    print(result_json)
+    
+    return result_json['tags'],result_json['description']
 
 async def process_and_upsert_service(file,name,file_id,url,userID,saved_name):
     """
@@ -297,19 +304,17 @@ async def process_and_upsert_service(file,name,file_id,url,userID,saved_name):
         rows,page_content = await read_style_sheet(file)
         chunks = split_rows(rows,page_content=page_content)
         upsert_content_to_pinecone(chunks,name,file_id,50,userID)
-        # Generating tags
+        # Generating tags and description
         extracted_content = ' '.join(chunks[:min(TAGS_GENERATION_CHUNKS, len(chunks))])
-        tags = await generate_tags(name=saved_name,content=extracted_content,extension=file_ext)
-        return tags
     else:
         # Upserting text
         text = await read_text(file,url)
         chunks = split_text(text)
         upsert_content_to_pinecone(chunks,name,file_id,100,userID)
-        # Generating tags
+        # Generating tags and description
         extracted_content = ' '.join(chunks[:min(TAGS_GENERATION_CHUNKS, len(chunks))])
-        tags = await generate_tags(name=saved_name,content=extracted_content,extension=file_ext)
-        return tags
+    return await generate_infos(name=saved_name,content=extracted_content,extension=file_ext)
+
     
     # For further use
     file.file.seek(0)

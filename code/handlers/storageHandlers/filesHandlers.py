@@ -36,6 +36,7 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
     readId = []
     writeId = []
     tags = []
+    ai_description = ""
 
     if folderId is None:
         raise Exception("You must specify a folder to store the file in")
@@ -113,11 +114,15 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         size=get_readable_file_size(file_size),
         tags=tags,
         interactionDate=datetime.datetime.now().isoformat(),
-        hash=file_hash
+        hash=file_hash,
+        ai_description=ai_description
     )
 
-    ai_generated_tags = await process_and_upsert_service(file=file,name=name,file_id=fileObj.id,url=url,userID=userID,saved_name=saved_name)
+    #ai_generated_tags,ai_generated_description = await process_and_upsert_service(file=file,name=name,file_id=fileObj.id,url=url,userID=userID,saved_name=saved_name)
+    ai_generated_tags,ai_generated_description = ['example-tag'] , 'example-description'
+    
     fileObj.tags.extend(ai_generated_tags)
+    fileObj.ai_description = ai_generated_description
 
     parentFolder["files"].append(fileObj.id)
     parentFolder["interactionDate"] = datetime.datetime.now().isoformat()

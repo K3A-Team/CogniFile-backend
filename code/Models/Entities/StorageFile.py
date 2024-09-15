@@ -13,6 +13,7 @@ class StorageFile:
             size: str,
             url : str,
             storageFileId : str,
+            ai_description : str,
             id : str = None,
             hash : str = None,
             tags: List[str] = [],
@@ -32,6 +33,7 @@ class StorageFile:
         self.url = url
         self.storageFileId = storageFileId
         self.hash = hash
+        self.ai_description = ai_description
 
     def to_dict(self) -> dict:
         return {
@@ -46,5 +48,6 @@ class StorageFile:
             "url": self.url,
             "interactionDate": self.interactionDate,
             "storageFileId": self.storageFileId,
-            "hash": self.hash
+            "hash": self.hash,
+            "ai_description" : self.ai_description
         }
