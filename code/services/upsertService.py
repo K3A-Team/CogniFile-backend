@@ -269,6 +269,7 @@ async def generate_infos(name,content,extension):
     json_start = llm_result.content.index('{')
     json_end = llm_result.content.rindex('}') + 1
     result_json = json.loads(llm_result.content[json_start:json_end])
+    print(result_json)
     
     return result_json['tags'],result_json['description']
 
@@ -305,7 +306,6 @@ async def process_and_upsert_service(file,name,file_id,url,userID,saved_name):
         upsert_content_to_pinecone(chunks,name,file_id,50,userID)
         # Generating tags and description
         extracted_content = ' '.join(chunks[:min(TAGS_GENERATION_CHUNKS, len(chunks))])
-        return await generate_infos(name=saved_name,content=extracted_content,extension=file_ext)
     else:
         # Upserting text
         text = await read_text(file,url)
@@ -313,7 +313,7 @@ async def process_and_upsert_service(file,name,file_id,url,userID,saved_name):
         upsert_content_to_pinecone(chunks,name,file_id,100,userID)
         # Generating tags and description
         extracted_content = ' '.join(chunks[:min(TAGS_GENERATION_CHUNKS, len(chunks))])
-        return await generate_infos(name=saved_name,content=extracted_content,extension=file_ext)
+    return await generate_infos(name=saved_name,content=extracted_content,extension=file_ext)
 
     
     # For further use
