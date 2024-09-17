@@ -4,16 +4,16 @@ from Core.Shared.Security import *
 from Core.Shared.Utils import *
 from Core.Shared.ErrorResponses import *
 from Middlewares.authProtectionMiddlewares import LoginProtected
-from handlers.sharedStorageHandlers import getSharedStorage , createSharedStorage , getUserSharedStorages
+from handlers.sharedStorageHandlers import getSharedStorage , createSharedStorage , getUserSharedStoragesHandler
 
 
 # Create a new APIRouter instance for storage-related routes
 sharedStorageRouter = APIRouter()
 
-@sharedStorageRouter.get("/")
-async def getUserSharedStorages( userID: str = Depends(LoginProtected)):
+@sharedStorageRouter.get("/storage")
+async def getUserSharedStorage( userID: str = Depends(LoginProtected)):
     try:
-        sharedContent = await getUserSharedStorages(userID)
+        sharedContent = await getUserSharedStoragesHandler(userID)
         return {
             "success": True,
             "content": sharedContent

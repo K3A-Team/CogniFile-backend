@@ -77,10 +77,20 @@ async def getSharedStorage(storageId: str):
 
     return storage
 
-async def getUserSharedStorages(userId):
+async def getUserSharedStoragesHandler(userId):
 
-    sharedStorages = Database.getUserSharedStorages(userId)
+    sharedStorages = await Database.getUserSharedStorages(userId)
 
-    print(sharedStorages)
+    # Only keep imagePath , id , rootFodlerPath and name
+    filtered_shared_storages = [
+    {
+        "imagePath": storage.get("imagePath"),
+        "id": storage.get("id"),
+        "rootFolderId": storage.get("rootFolderId"),
+        "name": storage.get("name")
+    }
+    for storage in sharedStorages
+    ]
 
-    return sharedStorages
+
+    return filtered_shared_storages

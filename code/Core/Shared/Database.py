@@ -356,7 +356,7 @@ class Database:
         return db.collection("sharedStorage").document(storage.id).set(storageDict)
     
     @staticmethod
-    def getUserSharedStorages(userId):
+    async def getUserSharedStorages(userId):
         col_ref = db.collection("sharedStorage")
 
         # Create filters
@@ -364,11 +364,16 @@ class Database:
         filter_read = FieldFilter("readIds", "array_contains", userId)
         filter_write = FieldFilter("writeIds", "array_contains", userId)
 
+        print("Begun filtering")
+
         # Create the union filter of the three filters
         or_filter = Or(filters=[filter_owner, filter_read, filter_write])
 
+        print("Filtering")
         # Execute the query
         docs = col_ref.where(filter=or_filter).stream()
+
+        print("Filtered")
 
         user_storages = [doc.to_dict() for doc in docs]
 
