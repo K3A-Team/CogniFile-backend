@@ -3,6 +3,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 import os
+from google.cloud.firestore_v1 import FieldFilter, Or
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -348,3 +349,27 @@ class Database:
                 refs[collection] = db.collection("users")
         
         return refs
+
+    @staticmethod
+    def createStorage(storage):
+        storageDict = storage.to_dict()
+        return db.collection("sharedStorage").document(storage.id).set(storageDict)
+    
+    @staticmethod
+    def getUserSharedStorages(userId):
+        col_ref = db.collection("sharedStorage")
+
+        # Create filters
+        filter_owner = FieldFilter("ownerId", "==", userId)
+        filter_read = FieldFilter("readIds", "array_contains", userId)
+        filter_write = FieldFilter("writeIds", "array_contains", userId)
+
+        # Create the union filter of the three filters
+        or_filter = Or(filters=[filter_owner, filter_read, filter_write])
+
+        # Execute the query
+        docs = col_ref.where(filter=or_filter).stream()
+
+        user_storages = [doc.to_dict() for doc in docs]
+
+        return user_storages
