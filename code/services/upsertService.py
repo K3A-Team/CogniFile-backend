@@ -58,7 +58,7 @@ gemini_model = ChatGoogleGenerativeAI(model="gemini-1.5-flash",temperature=MODEL
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Reading style sheet values as rows (CSV,XLSX)
-async def read_style_sheet(file: UploadFile):
+async def read_style_sheet(file: UploadFile,name : str):
     """
     Read and parse a style sheet file (CSV or XLSX) and return its content as rows.
 
@@ -75,13 +75,13 @@ async def read_style_sheet(file: UploadFile):
     Raises:
         ValueError: If the file format is not supported.
     """
-    match os.path.splitext(file.filename)[1].lower():
+    match os.path.splitext(name)[1].lower():
         case '.csv': 
             df = pd.read_csv(file.file)
         case '.xlsx': 
             df = pd.read_excel(file.file)
         case _ :
-            ValueError(f"Unsupported file format for formating : {os.path.splitext(file.filename)[1].lower()}")
+            ValueError(f"Unsupported file format for formating : {os.path.splitext(name)[1].lower()}")
     loader = DataFrameLoader(data_frame=df,page_content_column=df.columns[0])
     rows = loader.load()
     return [rows,df.columns[0]]
@@ -108,7 +108,7 @@ def split_rows(rows,page_content):
     return chunks
 
 # Reading file values as text (TXT,PDF)
-async def read_text(file: UploadFile,url):
+async def read_text(file: UploadFile,url,name : str):
     """
     Split rows into chunks and combine metadata with content.
 
@@ -124,7 +124,7 @@ async def read_text(file: UploadFile,url):
         list: A list of stringified chunks, where each chunk is a list of combined metadata and content.
     """
     text = ''
-    match os.path.splitext(file.filename)[1].lower():
+    match os.path.splitext(name)[1].lower():
         case '.pdf':
             loader = PyPDFLoader(url)
             pages = loader.load()
@@ -142,7 +142,7 @@ async def read_text(file: UploadFile,url):
             content = await file.read()
             return content.decode('utf-8')
         case _ :
-            ValueError(f"Unsupported file format for formating : {os.path.splitext(file.filename)[1].lower()}")
+            ValueError(f"Unsupported file format for formating : {os.path.splitext(name)[1].lower()}")
 
 # Spliting text 
 def split_text(text):
@@ -295,20 +295,20 @@ async def process_and_upsert_service(file,name,file_id,url,userID,saved_name):
     upsert_name_to_pinecone(name,file_id,userID)
     
     # Upserting the file's content
-    file_ext = os.path.splitext(file.filename)[1].lower()
+    file_ext = os.path.splitext(name)[1]
     if (file_ext not in SUPPORTED_EXTENSIONS):
         # No upserting (for the moment)
-        return []
+        return [] , ''
     if(file_ext == '.csv' or file_ext == '.xlsx' ):
         # Upserting rows
-        rows,page_content = await read_style_sheet(file)
+        rows,page_content = await read_style_sheet(file,name)
         chunks = split_rows(rows,page_content=page_content)
         upsert_content_to_pinecone(chunks,name,file_id,50,userID)
         # Generating tags and description
         extracted_content = ' '.join(chunks[:min(TAGS_GENERATION_CHUNKS, len(chunks))])
     else:
         # Upserting text
-        text = await read_text(file,url)
+        text = await read_text(file,url,name)
         chunks = split_text(text)
         upsert_content_to_pinecone(chunks,name,file_id,100,userID)
         # Generating tags and description
