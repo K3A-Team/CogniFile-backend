@@ -90,3 +90,4 @@ pypdf
 langchain_openai
 slowapi
 python-docx
+stripe
