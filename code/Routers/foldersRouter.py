@@ -6,9 +6,10 @@ from Core.Shared.Utils import *
 from Core.Shared.ErrorResponses import *
 from fastapi import UploadFile
 from fastapi import File
+from typing import List
 from dotenv import load_dotenv
 from Models.Requests.FolderRequestsModels import CreateFolderRequest
-from handlers.storageHandlers.foldersHandlers import createFolderHandler , getFolderHandler ,deleteFolderHandler , restoreFolderHandler , restoreFileHandler
+from handlers.storageHandlers.foldersHandlers import createFolderHandler , getFolderHandler ,deleteFolderHandler , restoreFolderHandler , restoreFileHandler , uploadFolderHandler
 from handlers.storageHandlers.filesHandlers import createFileHandler , deleteFileHandler
 
 load_dotenv()
@@ -82,3 +83,14 @@ async def createFile(
     except Exception as e:
         return {"success": False, "message": str(e)}
     
+@foldersRouter.post("/{folderId}/uploadFolder",status_code=status.HTTP_201_CREATED)
+async def uploadFolder(folderId : str,
+                       files: List[UploadFile] = File(...),
+                       userID: str = Depends(LoginProtected)):
+    try: 
+         
+        result = await uploadFolderHandler(userID,files,folderId)
+        return {"success": True, "folder": result}
+
+    except Exception as e:
+        return {"success": False, "message": str(e)}

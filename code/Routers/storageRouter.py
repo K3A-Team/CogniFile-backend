@@ -6,6 +6,7 @@ from Core.Shared.ErrorResponses import *
 from Middlewares.authProtectionMiddlewares import LoginProtected
 from Routers.foldersRouter import foldersRouter
 from Routers.filesRouter import filesRouter
+from Routers.sharedStorageRouter import sharedStorageRouter
 from handlers.storageHandlers.storageHandlers import get_shared_content_handler
 from handlers.storageHandlers.storageHandlers import getRecentElementsHandler , removeTrashHandler
 from handlers.storageHandlers.foldersHandlers import restoreFileHandler , restoreFolderHandler
@@ -13,7 +14,7 @@ from handlers.storageHandlers.foldersHandlers import restoreFileHandler , restor
 # Create a new APIRouter instance for storage-related routes
 storageRouter = APIRouter()
 
-@storageRouter.get("/shared")
+@storageRouter.get("/sharedContent")
 def getSharedContent(search: str = None, userID: str = Depends(LoginProtected)):
     """
     Retrieves the shared content (files and folders) that match the search query (if exists).
@@ -83,3 +84,6 @@ storageRouter.include_router(foldersRouter, tags=["folders"], prefix="/folder")
 
 # Nest filesRouter inside storageRouter with the prefix "/folders" and tag "files"
 storageRouter.include_router(filesRouter, tags=["files"], prefix="/file")
+
+# Nest sharedStorageRouter inside storageRouter with the prefix "/shared" and tag "shared"
+storageRouter.include_router(sharedStorageRouter, tags=["shared"], prefix="/shared")

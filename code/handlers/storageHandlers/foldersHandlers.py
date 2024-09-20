@@ -4,6 +4,8 @@ from Core.Shared.Security import *
 from Core.Shared.Utils import *
 from Core.Shared.ErrorResponses import *
 from Models.Entities.Folder import Folder
+from typing import List
+from handlers.storageHandlers.filesHandlers import createFileHandler
 import datetime
 from Core.Shared.Database import db
 
@@ -222,3 +224,29 @@ async def restoreFileHandler(userID:str,fileId: str):
     file = await Database.edit("files", file["id"], file)
 
     return folder
+
+async def uploadFolderHandler(userID : str,files : List[UploadFile],folderId : str):
+    folder_dict = {}
+    parent_created = False
+    for file in files:
+        # Extract needed informations
+        path_array = file.filename.split('/')
+        file_name = path_array[-1]
+        file_folder = path_array[-2]
+        if (len(path_array) > 2):
+            file_folder_parent_id = folder_dict[path_array[-3]]
+        else:
+            file_folder_parent_id = folderId
+        # Get file folder or create if it doesn't exist
+        if file_folder in folder_dict :
+            file_folder_id = folder_dict[file_folder]
+        else:
+            folderDict = await createFolderHandler(userID=userID, folderName=file_folder, parentFolderID=file_folder_parent_id)
+            file_folder_id = folderDict['id']
+            folder_dict[file_folder] = file_folder_id
+            if not parent_created : 
+                created_folder_id = folderDict['id']
+                parent_created = True
+        # Create the file
+        fileDict = await createFileHandler(userID=userID,folderId=file_folder_id, file=file, force=True,dir_name=file_name,valid_dir_name=True)   
+    return await Database.getFodlerFormatted(created_folder_id)
