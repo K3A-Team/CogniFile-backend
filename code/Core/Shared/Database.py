@@ -169,6 +169,14 @@ class Database:
     async def getUser(userID, attributes=None):
         return await Database.read("users", userID, attributes)
     
+    @staticmethod 
+    async def getUserEmail(email : str):
+
+        result = db.collection("users").where("email", "==", email.lower()).get()
+        if len(result) == 0:
+            return None
+        return result[0].to_dict()
+    
     @staticmethod
     async def getFilesDetails(fileIDs):
         filesDetails = []
@@ -374,20 +382,43 @@ class Database:
 
         # Create filters
         filter_owner = FieldFilter("ownerId", "==", userId)
-        filter_read = FieldFilter("readIds", "array_contains", userId)
-        filter_write = FieldFilter("writeIds", "array_contains", userId)
+        filter_read = FieldFilter("readId", "array_contains", userId)
+        filter_write = FieldFilter("writeId", "array_contains", userId)
 
-        print("Begun filtering")
 
         # Create the union filter of the three filters
         or_filter = Or(filters=[filter_owner, filter_read, filter_write])
 
-        print("Filtering")
+
         # Execute the query
         docs = col_ref.where(filter=or_filter).stream()
 
-        print("Filtered")
+
 
         user_storages = [doc.to_dict() for doc in docs]
 
+        # Present the members in a comprehensive way
+        for storage in user_storages:
+            membersIds = storage["readId"]
+
+            if membersIds:
+
+                users = db.collection("users").where("id", "in", membersIds).stream()
+
+                # Only leave first name , last name , id and email
+                storage["members"] = [
+                    {
+                        "firstName": user.get("firstName"),
+                        "lastName": user.get("lastName"),
+                        "id": user.get("id"),
+                        "email": user.get("email")
+                    }
+                    for user in users
+                ]
+            else:
+                storage["members"] = []
+
+
+
         return user_storages
+
