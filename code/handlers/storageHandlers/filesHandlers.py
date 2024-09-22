@@ -16,7 +16,7 @@ from services.upsertService import process_and_upsert_service
 import datetime
 from Core.Shared.Database import db
 
-async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...), force: bool | None = None):
+async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(...), force: bool | None = None, dir_name : str | None = None , valid_dir_name : bool = False):
     """
     Creates a file in the specified folder and stores it in Firebase Storage.
     Args:
@@ -59,7 +59,10 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
 
 
     
-    name, ext = os.path.splitext(file.filename)
+    if (not valid_dir_name):
+        name, ext = os.path.splitext(file.filename)
+    else: 
+        name, ext = os.path.splitext(dir_name)
     saved_name = name
     
     duplicate_check = await is_file_duplicate(file_hash, folderId)
@@ -78,7 +81,10 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
                     except ValueError:
                         pass
                 else:
-                    name = os.path.splitext(file.filename)[0]
+                    if (not valid_dir_name):
+                        name = os.path.splitext(file.filename)[0]
+                    else: 
+                        name = os.path.splitext(dir_name)[0]
             else:
                 raise HTTPException(status_code=400, detail="No last duplicate found")
 
@@ -118,8 +124,8 @@ async def createFileHandler(userID:str, folderId: str , file: UploadFile = File(
         ai_description=ai_description
     )
 
-    #ai_generated_tags,ai_generated_description = await process_and_upsert_service(file=file,name=name,file_id=fileObj.id,url=url,userID=userID,saved_name=saved_name)
-    ai_generated_tags,ai_generated_description = ['example-tag'] , 'example-description'
+    ai_generated_tags,ai_generated_description = await process_and_upsert_service(file=file,name=name,file_id=fileObj.id,url=url,userID=userID,saved_name=saved_name)
+    # ai_generated_tags,ai_generated_description = ['example-tag'] , 'example-description'
     
     fileObj.tags.extend(ai_generated_tags)
     fileObj.ai_description = ai_generated_description

@@ -359,6 +359,19 @@ class Database:
         return refs
 
     @staticmethod
+    async def createTrialSubscription(subscription):
+        subscriptionDict = subscription.to_dict()
+        await Database.store("subscriptions", subscription.id, subscriptionDict)
+        return subscriptionDict
+    
+    @staticmethod
+    async def updateUser(userID, userDict):
+        return await Database.edit("users", userID, userDict)
+    
+    @staticmethod
+    async def updateTrialSubscription(subID, subDict):
+        return await Database.edit("users", subID, subDict)
+
     def createStorage(storage):
         storageDict = storage.to_dict()
         return db.collection("sharedStorage").document(storage.id).set(storageDict)
@@ -408,3 +421,4 @@ class Database:
 
 
         return user_storages
+

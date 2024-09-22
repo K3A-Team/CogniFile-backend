@@ -2,6 +2,7 @@ from Core.Shared.ErrorResponses import *
 from Core.Shared.Database import Database
 from Core.Shared.Security import *
 from Core.Shared.Utils import *
+from Core.Shared.Trails import TRIALS
 from services.calcSizeService import get_bytes_from_readable_size, get_readable_file_size
 
 async def getProfileHandler(userID: str):
@@ -66,7 +67,7 @@ async def updateNewTrial(userID: str, trial: str):
     Raises:
         Exception: If the trial type is invalid.
     """
-    if trial not in ["basic", "standard", "premium"]:
+    if trial not in list(TRIALS.keys()):
         return badRequestError("Invalid trial type")
     await Database.edit("users", userID, {"trial": trial})
     return await Database.read("users", userID)
