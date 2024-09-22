@@ -87,10 +87,75 @@ async def getUserSharedStoragesHandler(userId):
         "imagePath": storage.get("imagePath"),
         "id": storage.get("id"),
         "rootFolderId": storage.get("rootFolderId"),
-        "name": storage.get("name")
+        "name": storage.get("name"),
+        "members" : storage['members']
     }
     for storage in sharedStorages
     ]
 
 
     return filtered_shared_storages
+
+async def addSharedStorageHandler(storageId , userId , userEmail):
+    """
+    Add a user to a shared storage.
+
+    This function adds a user to a shared storage.
+
+    Args:
+        storageId (str): The unique identifier of the shared storage.
+        userId (str): The unique identifier of the user.
+        userEmail (str): The email of the user to be added.
+
+    Returns:
+        None
+    """
+
+    storage = await Database.read("sharedStorage", storageId)
+    if storage is None:
+        raise HTTPException(status_code=404, detail="Shared storage not found")
+
+    if userId not in storage.get("ownerId"):
+        raise HTTPException(status_code=403, detail="User is not the owner of the shared storage")
+
+    if userEmail is None or userEmail == "":
+        raise HTTPException(status_code=400, detail="User email is required")
+    if userEmail is not None:
+        user = await Database.getUserEmail(userEmail)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        newUserId = user.get("id")
+
+    if newUserId in storage.get("readId"):
+        raise HTTPException(status_code=400, detail="User already has access to shared storage")
+
+    storage.get("readId").append(newUserId)
+    storage.get("writeId").append(newUserId)
+    await Database.edit("sharedStorage", storageId, storage)
+    await updateFodlersAccessRecursive(storage.get("rootFolderId"), newUserId)
+
+
+    return None
+
+async def updateFodlersAccessRecursive(rootId , userId):
+    """
+    Update the access of all folders in a shared storage.
+
+    This function updates the access of all folders in a shared storage.
+
+    Args:
+        rootId (str): The unique identifier of the root folder.
+        userId (str): The unique identifier of the user.
+
+    Returns:
+        None
+    """
+
+    folder = await Database.getFolder(rootId)
+    folder["readId"].append(userId)
+    folder["writeId"].append(userId)
+    await Database.edit("folders", folder.get("id"), folder)
+    for subfolder in folder["subFolders"]:
+        await updateFodlersAccessRecursive(subfolder, userId)
+
+    return None
