@@ -96,7 +96,7 @@ async def getUserSharedStoragesHandler(userId):
 
     return filtered_shared_storages
 
-async def addSharedStorageHandler(storageId , userId , userEmail):
+async def addSharedStorageHandler(storageId , userId , userEmail , right : bool):
     """
     Add a user to a shared storage.
 
@@ -106,6 +106,7 @@ async def addSharedStorageHandler(storageId , userId , userEmail):
         storageId (str): The unique identifier of the shared storage.
         userId (str): The unique identifier of the user.
         userEmail (str): The email of the user to be added.
+        right (bool): True => Write & Read | False => Read only 
 
     Returns:
         None
@@ -128,9 +129,9 @@ async def addSharedStorageHandler(storageId , userId , userEmail):
 
     if newUserId in storage.get("readId"):
         raise HTTPException(status_code=400, detail="User already has access to shared storage")
-
     storage.get("readId").append(newUserId)
-    storage.get("writeId").append(newUserId)
+    if(right):
+        storage.get("writeId").append(newUserId)
     await Database.edit("sharedStorage", storageId, storage)
     await updateFodlersAccessRecursive(storage.get("rootFolderId"), newUserId)
 

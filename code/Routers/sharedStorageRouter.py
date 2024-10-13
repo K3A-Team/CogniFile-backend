@@ -33,9 +33,9 @@ async def createSharedStorageRoute( storageName , image: UploadFile = File(...),
         return {"success": False, "message": str(e)}
     
 @sharedStorageRouter.post("/{storageId}/member")
-async def addSharedStorageRoute(storageId , request : dict ,userId : str = Depends(LoginProtected)):
+async def addSharedStorageRoute(storageId , request : dict , right : bool,userId : str = Depends(LoginProtected)):
     try:
-        await addSharedStorageHandler(storageId , userId , request["userEmail"])
+        await addSharedStorageHandler(storageId , userId , request["userEmail"], right)
         return {
             "success": True,
             "message": "User added to shared storage"
